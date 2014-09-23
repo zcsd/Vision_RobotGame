@@ -6,12 +6,12 @@ LIBS= `pkg-config --libs opencv`
 
 #"VisionSystem - refers to the filename of the executable
 VisionSystem : $(objects)
-	gcc $(LIBS)$(CFLAGS) -o VisionSystem $(objects) -lpthread
+	gcc $(objects) -o VisionSystem $(LIBS)$(CFLAGS) -lpthread
 	sync
 
 #define how the *.O are created, i.e abc.O : (*.c file use to form the object) (all *.h file linking it)     
 Main.o: Main.c Vision.h Uart.h File.h 
-	gcc $(LIBS)$(CFLAGS)  -c Main.c
+	gcc  Main.c -c $(LIBS)$(CFLAGS)
 
 Vision.o: Vision.c Vision.h
 	

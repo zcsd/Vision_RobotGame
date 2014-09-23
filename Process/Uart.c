@@ -26,10 +26,10 @@ void UART_Init()
 	//											immediately with a failure status if the output can't be written immediately.
 	//
 	//	O_NOCTTY - When set and path identifies a terminal device, open() shall not cause the terminal device to become the controlling terminal for the process.
-	uart0_filestream = open("/dev/ttyAMA0", O_RDWR | O_NOCTTY | O_NDELAY);		//Open in non blocking read/write mode
+	uart0_filestream = open("/dev/ttySAC0", O_RDWR | O_NOCTTY | O_NDELAY);//Open in non blocking read/write mode
 	if (uart0_filestream == -1)
 	{
-		//ERROR - CAN'T OPEN SERIAL PORT  
+		//ERROR - CAN'T OPEN SERIAL PORT
 		printf("Error - Unable to open UART.  Ensure it is not in use by another application\n");
 	}
 	
@@ -45,13 +45,12 @@ void UART_Init()
 	//	PARODD - Odd parity (else even)
 	struct termios options;
 	tcgetattr(uart0_filestream, &options);
-	options.c_cflag = B115200 | CS8 | CLOCAL | CREAD;		//<Set baud rate
+	options.c_cflag = B115200 | CS8 | CLOCAL | CREAD;//<Set baud rate
 	options.c_iflag = IGNPAR | ICRNL;
 	options.c_oflag = 0;
 	options.c_lflag = 0;
 	tcflush(uart0_filestream, TCIFLUSH);
 	tcsetattr(uart0_filestream, TCSANOW, &options);
-	
 }
 
 void UART_TX_Char(char tx_buffer)
@@ -65,32 +64,30 @@ void UART_TX_Char(char tx_buffer)
 		}
 	}
 }
-
+/*
 void UART_TX()
 {
-	
 	//----- TX BYTES -----
 	unsigned char tx_buffer[20];
 	unsigned char *p_tx_buffer;
-	
+
 	p_tx_buffer = &tx_buffer[0];
 	*p_tx_buffer++ = 'H';
 	*p_tx_buffer++ = 'e';
 	*p_tx_buffer++ = 'l';
 	*p_tx_buffer++ = 'l';
 	*p_tx_buffer++ = 'o';
-	
+
 	if (uart0_filestream != -1)
 	{
-		int count = write(uart0_filestream, &tx_buffer[0], (p_tx_buffer - &tx_buffer[0]));		//Filestream, bytes to write, number of bytes to write
+		int count = write(uart0_filestream, &tx_buffer[0], (p_tx_buffer - &tx_buffer[0]));//Filestream, bytes to write, number of bytes to write
 		if (count < 0)
 		{
 			printf("UART TX error\n");
 		}
 	}
-	
 }
-
+*/
 int UART_RX()
 {
 	int check = 0;
@@ -98,15 +95,14 @@ int UART_RX()
 	{
 		// Read up to 255 characters from the port if they are there
 		
-		int rx_length = read(uart0_filestream, (void*)rx_buffer, 255);		//Filestream, buffer to store in, number of bytes to read (max)
+		int rx_length = read(uart0_filestream, (void*)rx_buffer, 255);//Filestream, buffer to store in, number of bytes to read (max)
 		if (rx_length < 0)
 		{
 			//An error occured (will occur if there are no bytes)
-			
 		}
 		else if (rx_length == 0)
 		{
-			
+
 		}
 		else
 		{
@@ -122,4 +118,3 @@ void UART_Close()
 {
 	close(uart0_filestream);
 }
-

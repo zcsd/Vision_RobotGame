@@ -1,0 +1,6 @@
+*.o
+VisionSystem
+Tuner/Tuner
+moc_tuner.cpp
+ui_tuner.h
+*.core

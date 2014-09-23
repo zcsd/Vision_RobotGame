@@ -1,0 +1,59 @@
+==========================================================================
+          Vision Code v2.0 for ODROID U3+
+==========================================================================
+>>> Date: 29 AUG 2014
+
+>>> New functionality/features
+
+    * Separate vision process and tuning GUI;
+    * Invert function for red color;
+        
+>>> Changes
+    
+    * New tuning GUI using QT
+    * Add Invert color 
+	
+>>> Folder 
+
+    * /home/odroid/Vision/Process
+    * /home/odroid/Vision/Tuner
+    * /home/odroid/Vision/Data
+
+>>> How to use
+
+    * 1) Start ODROID, system will auto running VisionSystem;
+    * 2) Open LXTerminal, key in the command "killall VisionSystem" to stop the program;
+    * 3) Edit and save vision code using Geany ;
+    * 4) Back to LXTerminal, key in the command "make" to recompile, make sure no error;
+    * 5) Key in the command "./VisionSystem M" to run the program with GUI, M is Game name;
+    * 6) You will be able to see 3 windows pop-out, then you can tune vision and save.	
+
+
+==========================================================================
+          Vision Code v1.0
+==========================================================================
+>>> Date: 19 JUN 2014
+
+>>> New functionality/features
+
+    * First released.
+        
+>>> Changes
+    
+    * First Released.
+	
+>>> Folder 
+
+    * VisionSystem5_webcam
+    * conf   
+
+>>> How to use
+
+    * 1) Start Raspberry Pi, system will auto running  code Version 1.0;
+    * 2) Open LXTerminal, key in the command "killall VisionSystem" to stop the program;
+    * 3) Go to accessories->file mamager->pi, you will see folder VisionSystem5_webcam, open it and make changes;
+    * 4) Save the changes by Ctrl+S; 
+    * 5) Back to LXTerminal, key in the command "make" to recompile, make sure no error;
+    * 6) Key in the command "./VisionSystem a" to run the program with GUI;
+    * 7) You will be able to see 3 windows pop-out.	
+

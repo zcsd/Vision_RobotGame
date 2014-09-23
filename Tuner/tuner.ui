@@ -1,0 +1,559 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>tuner</class>
+ <widget class="QDialog" name="tuner">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>360</width>
+    <height>600</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>tuner</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout_4">
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <widget class="QComboBox" name="gamePlay">
+       <item>
+        <property name="text">
+         <string>Mara</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Obs</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>W,Lift</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>B.Ball</string>
+        </property>
+       </item>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="comboBox">
+       <item>
+        <property name="text">
+         <string>Color 1</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Color 2</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Color 3</string>
+        </property>
+       </item>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="save">
+       <property name="text">
+        <string>Save</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="load">
+       <property name="text">
+        <string>Load</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="hueBox">
+     <property name="title">
+      <string>HUE</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_3">
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_3">
+        <item>
+         <widget class="QSlider" name="hueSlide1">
+          <property name="styleSheet">
+           <string notr="true">background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(255, 0, 0, 255), stop:0.166 rgba(255, 255, 0, 255), stop:0.333 rgba(0, 255, 0, 255), stop:0.5 rgba(0, 255, 255, 255), stop:0.666 rgba(0, 0, 255, 255), stop:0.833 rgba(255, 0, 255, 255), stop:1 rgba(255, 0, 0, 255));</string>
+          </property>
+          <property name="maximum">
+           <number>255</number>
+          </property>
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="tickPosition">
+           <enum>QSlider::TicksBelow</enum>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QSpinBox" name="spinBox">
+          <property name="maximum">
+           <number>255</number>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <spacer name="verticalSpacer">
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>20</width>
+          <height>37</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_2">
+        <item>
+         <widget class="QSlider" name="hueSlide2">
+          <property name="styleSheet">
+           <string notr="true">background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(255, 0, 0, 255), stop:0.166 rgba(255, 255, 0, 255), stop:0.333 rgba(0, 255, 0, 255), stop:0.5 rgba(0, 255, 255, 255), stop:0.666 rgba(0, 0, 255, 255), stop:0.833 rgba(255, 0, 255, 255), stop:1 rgba(255, 0, 0, 255));</string>
+          </property>
+          <property name="maximum">
+           <number>255</number>
+          </property>
+          <property name="value">
+           <number>255</number>
+          </property>
+          <property name="sliderPosition">
+           <number>255</number>
+          </property>
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="tickPosition">
+           <enum>QSlider::TicksBelow</enum>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QSpinBox" name="spinBox_2">
+          <property name="maximum">
+           <number>255</number>
+          </property>
+          <property name="value">
+           <number>255</number>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="invertCheck">
+        <property name="text">
+         <string>INVERT</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <spacer name="verticalSpacer_5">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>41</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="satBox">
+     <property name="title">
+      <string>SAT</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_2">
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_4">
+        <item>
+         <widget class="QSlider" name="satSlide1">
+          <property name="styleSheet">
+           <string notr="true">background-color: qlineargradient(spread:pad, x1:1, y1:1, x2:0, y2:1, stop:0 rgba(0, 0, 255, 255), stop:1 rgba(255, 255, 255, 255));</string>
+          </property>
+          <property name="maximum">
+           <number>255</number>
+          </property>
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="tickPosition">
+           <enum>QSlider::TicksBelow</enum>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QSpinBox" name="spinBox_3">
+          <property name="maximum">
+           <number>255</number>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <spacer name="verticalSpacer_2">
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>20</width>
+          <height>37</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_5">
+        <item>
+         <widget class="QSlider" name="satSlide2">
+          <property name="styleSheet">
+           <string notr="true">background-color: qlineargradient(spread:pad, x1:1, y1:1, x2:0, y2:1, stop:0 rgba(0, 0, 255, 255), stop:1 rgba(255, 255, 255, 255));</string>
+          </property>
+          <property name="maximum">
+           <number>255</number>
+          </property>
+          <property name="sliderPosition">
+           <number>255</number>
+          </property>
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="tickPosition">
+           <enum>QSlider::TicksBelow</enum>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QSpinBox" name="spinBox_4">
+          <property name="maximum">
+           <number>255</number>
+          </property>
+          <property name="value">
+           <number>255</number>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+     <zorder>verticalSpacer_2</zorder>
+    </widget>
+   </item>
+   <item>
+    <spacer name="verticalSpacer_6">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>41</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="lumBox">
+     <property name="title">
+      <string>LUM</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout">
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_6">
+        <item>
+         <widget class="QSlider" name="lumSlide1">
+          <property name="styleSheet">
+           <string notr="true">background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(0, 0, 0, 255), stop:1 rgba(255, 255, 255, 255));</string>
+          </property>
+          <property name="maximum">
+           <number>255</number>
+          </property>
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="tickPosition">
+           <enum>QSlider::TicksBelow</enum>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QSpinBox" name="spinBox_5">
+          <property name="maximum">
+           <number>255</number>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <spacer name="verticalSpacer_3">
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>20</width>
+          <height>37</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_7">
+        <item>
+         <widget class="QSlider" name="lumSlide2">
+          <property name="styleSheet">
+           <string notr="true">background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(0, 0, 0, 255), stop:1 rgba(255, 255, 255, 255));</string>
+          </property>
+          <property name="maximum">
+           <number>255</number>
+          </property>
+          <property name="sliderPosition">
+           <number>255</number>
+          </property>
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="tickPosition">
+           <enum>QSlider::TicksBelow</enum>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QSpinBox" name="spinBox_6">
+          <property name="maximum">
+           <number>255</number>
+          </property>
+          <property name="value">
+           <number>255</number>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <layoutdefault spacing="6" margin="11"/>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>hueSlide1</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>spinBox</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>230</x>
+     <y>79</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>298</x>
+     <y>83</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>spinBox</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>hueSlide1</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>315</x>
+     <y>70</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>124</x>
+     <y>85</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>hueSlide2</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>spinBox_2</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>201</x>
+     <y>157</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>310</x>
+     <y>159</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>spinBox_2</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>hueSlide2</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>312</x>
+     <y>148</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>141</x>
+     <y>162</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>satSlide1</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>spinBox_3</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>189</x>
+     <y>308</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>288</x>
+     <y>307</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>spinBox_3</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>satSlide1</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>315</x>
+     <y>297</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>142</x>
+     <y>303</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>satSlide2</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>spinBox_4</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>220</x>
+     <y>377</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>304</x>
+     <y>376</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>spinBox_4</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>satSlide2</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>338</x>
+     <y>385</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>112</x>
+     <y>381</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>lumSlide1</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>spinBox_5</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>152</x>
+     <y>492</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>289</x>
+     <y>496</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>spinBox_5</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>lumSlide1</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>293</x>
+     <y>486</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>108</x>
+     <y>489</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>lumSlide2</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>spinBox_6</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>131</x>
+     <y>562</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>309</x>
+     <y>561</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>spinBox_6</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>lumSlide2</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>318</x>
+     <y>577</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>48</x>
+     <y>569</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>

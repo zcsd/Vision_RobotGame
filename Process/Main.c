@@ -2,7 +2,7 @@
 //															//
 //			 VisionSystem for Humanoid Robot				//
 //															//
-//						  V2.0								//
+//						  V2.1								//
 //															//
 //				    For ODROID U3+							//
 //															//
@@ -49,19 +49,8 @@ void *threadUARTRx(void *arg)
 	//printf("UART has quit\r\n");
 	return NULL;
 }
-/*
-void *threadFrameGrab(void *arg)
-{
-	while(1)
-	{
-		//TODO: vision frame grabbing function
-		VISION_GrabFrame();
-		FrameGrabDone = 1;
-	}
-	//printf("Time - Frame Grabbing: %.2f\r\n", time_spent);
-}
-*/
-void TX_Char(char x, BlobCoord Blob)
+
+void TX_Char(char x, BlobCoord Blob,BlobCoord Blob1)
 {
 	UART_TX_Char(13);
 	UART_TX_Char(x);
@@ -70,12 +59,12 @@ void TX_Char(char x, BlobCoord Blob)
 	UART_TX_Char(Blob.Xmax);
 	UART_TX_Char(Blob.Ymin);
 	UART_TX_Char(Blob.Ymax);
-	
+	printf("\r\nBlobX: %d\t%d\r\nBlobY: %d\t%d", Blob.Xmin, Blob.Xmax, Blob.Ymin, Blob.Ymax);	
 }
 
 void RunVision_ColorSeg_Struct(VisionRange Range,VisionRange Range1,VisionRange Range2,char *key1, Color color)
 {
-	BlobCoord Blob;
+	BlobCoord Blob,Blob1;
 	LoadColor(color);
 	clock_t begin, end;
 	double time_spent;
@@ -92,26 +81,31 @@ void RunVision_ColorSeg_Struct(VisionRange Range,VisionRange Range1,VisionRange 
 		begin = clock();
 		//printf("Range: %d\n",Range.Hmin);
 		
-		if((key == 'M' || key== 'O' || key == 'W' || key== 'B') && colorNo==0)
+		if((key == 'B' || key== 'D' || key == 'W' || key== 'K') && colorNo==0)
 		VISION_Tune_Color1(Range,Range1,Range2,&Blob,key1, color);
 		
-		else if((key== 'O' || key== 'B') && colorNo==1)
+		else if((key== 'D' || key== 'K' ||key == 'B') && colorNo==1)
 		VISION_Tune_Color2(Range,Range1,Range2,&Blob,key1, color);
 		
-		else if((key == 'O') && colorNo==2)
+		else if((key == 'D' || key == 'B') && colorNo==2)
 		VISION_Tune_Color3(Range,Range1,Range2,&Blob,key1, color);
 		
 		switch(key_Game)
 		{
-			case 'M':
+			case 'B'://Fira Mara
+//			VISION_Game_ArrowDetect(Range,Range1,Range2,&Blob,key1, color);
+			VISION_Game_1Color(Range,Range1,Range2,&Blob,key1, color);
+			break;
+			
 			case 'W':
 			VISION_Game_1Color(Range,Range1,Range2,&Blob,key1, color);
 			
 			break;
-			case 'O':
+			case 'D': //Fira Obs
+			VISION_Game_OBS(Range,Range1,Range2,&Blob,&Blob1,key1, color);
 			
 			break;
-			case 'B':
+			case 'K':
 			
 			break;
 			
@@ -121,15 +115,20 @@ void RunVision_ColorSeg_Struct(VisionRange Range,VisionRange Range1,VisionRange 
 		time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
 		//printf("ProcFrame: %.2f fps\t", 1/time_spent);
 
-		switch(*key1)
+		switch(key_Game)//*key1)
 		{			
 			case'B':
-			TX_Char(1,Blob);
+			TX_Char(1,Blob,Blob1);
+			break;
+			
+			case'D':
+			TX_Char(3,Blob,Blob1);
+			TX_Char(4,Blob,Blob1);
 			break;
 		}
 
 		FrameGrabDone=0;
-		//printf("\r\nBlobX: %d\t%d\r\nBlobY: %d\t%d", Blob.Xmin, Blob.Xmax, Blob.Ymin, Blob.Ymax);
+//		printf("\r\nBlobX: %d\t%d\r\nBlobY: %d\t%d", Blob.Xmin, Blob.Xmax, Blob.Ymin, Blob.Ymax);
 	}
 }
 
@@ -140,6 +139,15 @@ void Readfile(char* Game, int x)
 	strcat(Path,Game);
 	strcat(Path,ExtName);
 	FILE_Read(Path, &Range[x]);
+}
+
+void ReadfileGame(char* Game, int x)
+{
+	strcpy(GameName[x],Game);
+	strcpy(Path,Dir);
+	strcat(Path,Game);
+	strcat(Path,ExtName);
+	FILE_ReadGame(Path, &Range[x],x);
 }
 
 void ReadColor()
@@ -198,12 +206,12 @@ int main(int argc, char **argv)
 	}
 	else
 	{
-		key_Game = 'M';//rx_buffer[0];
+		key_Game = 'D';//rx_buffer[0];
 		key= 0;
 	}
 	switch (key)
 		{
-			case 'M'://mara
+			case 'B'://mara
 			ReadWriteColortoRD();
 			WriteGameRD();
 			ReadSDWriteRD("ColorM");
@@ -214,7 +222,7 @@ int main(int argc, char **argv)
 									
 			break;
 					
-			case 'O': 
+			case 'D': 
 			ReadWriteColortoRD();
 			WriteGameRD();	
 			ReadSDWriteRD("ColorO");
@@ -236,7 +244,7 @@ int main(int argc, char **argv)
 									
 			break;
 				
-			case 'B':
+			case 'K':
 			ReadWriteColortoRD(); 
 			WriteGameRD(); 
 			ReadSDWriteRD("ColorB");
@@ -247,7 +255,7 @@ int main(int argc, char **argv)
 		}
 	switch (key_Game)
 		{
-			case 'M'://mara
+			case 'B'://mara
 			ReadWriteColortoRD();
 			WriteGameRD();
 			ReadSDWriteRD("ColorM");
@@ -258,7 +266,7 @@ int main(int argc, char **argv)
 									
 			break;
 					
-			case 'O': 
+			case 'D': 
 			ReadWriteColortoRD();
 			WriteGameRD();	
 			ReadSDWriteRD("ColorO");
@@ -280,7 +288,7 @@ int main(int argc, char **argv)
 									
 			break;
 				
-			case 'B':
+			case 'K':
 			ReadWriteColortoRD(); 
 			WriteGameRD(); 
 			ReadSDWriteRD("ColorB");
@@ -296,14 +304,16 @@ int main(int argc, char **argv)
 
 		switch (key)
 		{
-			case 'M'://mara
+			case 'B'://mara
 			ReadColor();
 			Readfile("tuning",0);
+			Readfile("tuning",1);
+			Readfile("tuning",2);
 			//printf("color=%d",color);
 			RunVision_ColorSeg_Struct(Range[0],Range[1],Range[2],&key,color);
 			break;
 					
-			case 'O': 
+			case 'D': 
 			ReadColor();
 			Readfile("tuning",0);
 			Readfile("tuning",1);
@@ -321,7 +331,7 @@ int main(int argc, char **argv)
 								
 			break;
 				
-			case 'B': 
+			case 'K': 
 			ReadColor();
 			Readfile("tuning",0);
 			Readfile("tuning",1);
@@ -332,33 +342,35 @@ int main(int argc, char **argv)
 		}			
 		switch (key_Game)
 		{
-			case 'M'://mara
-			ReadColor();
-			Readfile("Color",0);
+			case 'B'://mara
+			//ReadColor();
+			ReadfileGame("Color",0);
+			ReadfileGame("Color",1);
+			ReadfileGame("Color",2);
 			//printf("color=%d",color);
 			RunVision_ColorSeg_Struct(Range[0],Range[1],Range[2],&key,color);
 			break;
 					
-			case 'O': 
-			ReadColor();
-			Readfile("Color",0);
-			Readfile("Color",1);
-			Readfile("Color",2);
+			case 'D': 
+			//ReadColor();
+			ReadfileGame("Color",0);
+			ReadfileGame("Color",1);
+			ReadfileGame("Color",2);
 			//printf("color=%d",color);
 			RunVision_ColorSeg_Struct(Range[0],Range[1],Range[2],&key,color);
 								
 			break;
 				
 			case 'W':
-			ReadColor();
+			//ReadColor();
 			Readfile("Color",0);
 			//printf("color=%d",color);
 			RunVision_ColorSeg_Struct(Range[0],Range[1],Range[2],&key,color);
 								
 			break;
 				
-			case 'B': 
-			ReadColor();
+			case 'K': 
+			//ReadColor();
 			Readfile("Color",0);
 			Readfile("Color",1);
 			//printf("color=%d",color);
@@ -368,7 +380,7 @@ int main(int argc, char **argv)
 		}
 		end = clock();
 		time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
-		//printf("Time - Frame Grabbing: %.2f fps\r\n", 1/time_spent);
+//		printf("Time - Frame Grabbing: %.2f fps\r\n", 1/time_spent);
 		if ( (cvWaitKey(10) & 255) == 27 ) break;//quit if press 'Esc'
 	}	
 	

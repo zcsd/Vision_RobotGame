@@ -70,8 +70,8 @@ void tuner::pathSelect()
     switch(ui->gamePlay->currentIndex())
     {
         case 0:
-        ui->comboBox->model()->setData(index1,0,Qt::UserRole -1);
-        ui->comboBox->model()->setData(index2,0,Qt::UserRole -1);
+        ui->comboBox->model()->setData(index1,33,Qt::UserRole -1);
+        ui->comboBox->model()->setData(index2,33,Qt::UserRole -1);
 
         pathSD="/home/odroid/Vision/Data/ColorM.txt";
         break;
@@ -427,7 +427,7 @@ void tuner::readGame()
     //qDebug()<<"game"<< game;
     switch(game)
     {
-    case 'M':
+    case 'B':
         ui->gamePlay->model()->setData(mode1,33,Qt::UserRole -1);
         ui->gamePlay->model()->setData(mode2,0,Qt::UserRole -1);
         ui->gamePlay->model()->setData(mode3,0,Qt::UserRole -1);
@@ -435,7 +435,7 @@ void tuner::readGame()
         ui->gamePlay->setCurrentIndex(0);
         break;
 
-    case 'O':
+    case 'D':
         ui->gamePlay->model()->setData(mode1,0,Qt::UserRole -1);
         ui->gamePlay->model()->setData(mode2,33,Qt::UserRole -1);
         ui->gamePlay->model()->setData(mode3,0,Qt::UserRole -1);
@@ -451,7 +451,7 @@ void tuner::readGame()
         ui->gamePlay->setCurrentIndex(2);
         break;
 
-    case 'B':
+    case 'K':
         ui->gamePlay->model()->setData(mode1,0,Qt::UserRole -1);
         ui->gamePlay->model()->setData(mode2,0,Qt::UserRole -1);
         ui->gamePlay->model()->setData(mode3,0,Qt::UserRole -1);

@@ -1,4 +1,23 @@
 ==========================================================================
+          Vision Code v2.1 for ODROID U3+
+==========================================================================
+>>> Date: 29 SEP 2014
+
+>>> New functionality/features
+
+    * Add FIRA OBS Game,only one color
+        
+>>> Changes
+    
+    * Fix tuning bug(only see 1 color)
+	
+>>> Folder 
+
+    * /home/odroid/Vision/Process
+    * /home/odroid/Vision/Tuner
+    * /home/odroid/Vision/Data
+
+==========================================================================
           Vision Code v2.0 for ODROID U3+
 ==========================================================================
 >>> Date: 29 AUG 2014

@@ -69,6 +69,60 @@ int FILE_Read(char Filename[50], VisionRange *temp)
 	return(1);
 }
 
+int FILE_ReadGame(char Filename[50], VisionRange *temp, int x)
+{
+	char xx[5];
+	int ii,tvalue[21];
+	FILE *fp;
+	fp=fopen(Filename,"r");         
+	
+	for(ii=0;ii<21;ii++)
+	{
+		fgets(xx,sizeof(xx),fp);
+		tvalue[ii]=atoi(xx);
+		//printf("%d\n",tvalue[ii]);		
+	}
+	fclose(fp);
+	
+	switch(x)
+	{
+		case 0:
+		{
+			(temp->invert) = tvalue[0];
+			(temp->Hmin) = tvalue[1];
+			(temp->Hmax) = tvalue[2];
+			(temp->Smin) = tvalue[3];
+			(temp->Smax) = tvalue[4];
+			(temp->Lmin) = tvalue[5];
+			(temp->Lmax) = tvalue[6];
+		}
+		break;
+		case 1:
+		{
+			(temp->invert) = tvalue[7];
+			(temp->Hmin) = tvalue[8];
+			(temp->Hmax) = tvalue[9];
+			(temp->Smin) = tvalue[10];
+			(temp->Smax) = tvalue[11];
+			(temp->Lmin) = tvalue[12];
+			(temp->Lmax) = tvalue[13];
+		}
+		break;
+		case 2:
+		{
+			(temp->invert) = tvalue[14];
+			(temp->Hmin) = tvalue[15];
+			(temp->Hmax) = tvalue[16];
+			(temp->Smin) = tvalue[17];
+			(temp->Smax) = tvalue[18];
+			(temp->Lmin) = tvalue[19];
+			(temp->Lmax) = tvalue[20];
+		}
+		break;
+	}
+	return(1);
+}
+
 int FILE_ReadColor(Color *colortemp)
 {
 	FILE *file;

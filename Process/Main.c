@@ -2,7 +2,7 @@
 //															//
 //			 VisionSystem for Humanoid Robot				//
 //															//
-//						  V2.1								//
+//						  V2.2								//
 //															//
 //				    For ODROID U3+							//
 //															//
@@ -93,8 +93,8 @@ void RunVision_ColorSeg_Struct(VisionRange Range,VisionRange Range1,VisionRange 
 		switch(key_Game)
 		{
 			case 'B'://Fira Mara
-//			VISION_Game_ArrowDetect(Range,Range1,Range2,&Blob,key1, color);
-			VISION_Game_1Color(Range,Range1,Range2,&Blob,key1, color);
+			VISION_Game_ArrowDetect(Range,Range1,Range2,&Blob,key1, color);
+//			VISION_Game_1Color(Range,Range1,Range2,&Blob,key1, color);
 			break;
 			
 			case 'W':
@@ -206,7 +206,7 @@ int main(int argc, char **argv)
 	}
 	else
 	{
-		key_Game = 'D';//rx_buffer[0];
+		key_Game = 'B';//rx_buffer[0];
 		key= 0;
 	}
 	switch (key)

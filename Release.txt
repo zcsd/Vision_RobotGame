@@ -1,4 +1,23 @@
 ==========================================================================
+          Vision Code v2.3 for ODROID U3+
+==========================================================================
+>>> Date: 1 OCT 2014
+
+>>> New functionality/features
+
+    * Add FIRA Basketball game, only one color.
+        
+>>> Changes
+    
+    * Fix rx_buffer problem, add default game mode
+	
+>>> Folder 
+
+    * /home/odroid/Vision/Process
+    * /home/odroid/Vision/Tuner
+    * /home/odroid/Vision/Data
+
+==========================================================================
           Vision Code v2.2 for ODROID U3+
 ==========================================================================
 >>> Date: 29 SEP 2014

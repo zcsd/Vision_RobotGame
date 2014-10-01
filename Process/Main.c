@@ -2,7 +2,7 @@
 //															//
 //			 VisionSystem for Humanoid Robot				//
 //															//
-//						  V2.2								//
+//						  V2.3								//
 //															//
 //				    For ODROID U3+							//
 //															//
@@ -23,8 +23,8 @@ int prog_quit = 0;
 int z,colorNo;
 Color color;
 VisionRange Range[3],RangeSD[3],rangeSD,rangeSD1,rangeSD2;
-char key,key_Game;
-char TuneTest = 0;
+char key=0,key_Game=0;
+char TuneTest = 0, LOOP=0;
 
 char FrameGrabDone = 0;
 char GameName[3][50],Path[50]="",Dir[50]="/mnt/rd/",ExtName[10]=".txt",Filename[50]="";
@@ -52,14 +52,27 @@ void *threadUARTRx(void *arg)
 
 void TX_Char(char x, BlobCoord Blob,BlobCoord Blob1)
 {
-	UART_TX_Char(13);
-	UART_TX_Char(x);
-
-	UART_TX_Char(Blob.Xmin);
-	UART_TX_Char(Blob.Xmax);
-	UART_TX_Char(Blob.Ymin);
-	UART_TX_Char(Blob.Ymax);
-	printf("\r\nBlobX: %d\t%d\r\nBlobY: %d\t%d", Blob.Xmin, Blob.Xmax, Blob.Ymin, Blob.Ymax);	
+	if( x == 1 || x == 10 || x == 12)//x=1(Mara) or x=10(BSK ball) or x=12(OBS floor)
+	{ 
+		UART_TX_Char(13);
+		UART_TX_Char(x);
+		UART_TX_Char(Blob.Xmin);
+		UART_TX_Char(Blob.Xmax);
+		UART_TX_Char(Blob.Ymin);
+		UART_TX_Char(Blob.Ymax);
+		printf("\nBlob X: %d %d , Blob Y: %d %d\n", Blob.Xmin, Blob.Xmax, Blob.Ymin, Blob.Ymax);
+	}
+	else // x = 11(BSK Basket) or x = 13(OBS red folder)
+	{
+		UART_TX_Char(13);
+		UART_TX_Char(x);
+		UART_TX_Char(Blob1.Xmin);
+		UART_TX_Char(Blob1.Xmax);
+		UART_TX_Char(Blob1.Ymin);
+		UART_TX_Char(Blob1.Ymax);
+		printf("Blob1 X: %d %d , Blob1 Y: %d %d\n", Blob1.Xmin, Blob1.Xmax, Blob1.Ymin, Blob1.Ymax);
+	}
+			
 }
 
 void RunVision_ColorSeg_Struct(VisionRange Range,VisionRange Range1,VisionRange Range2,char *key1, Color color)
@@ -97,16 +110,16 @@ void RunVision_ColorSeg_Struct(VisionRange Range,VisionRange Range1,VisionRange 
 //			VISION_Game_1Color(Range,Range1,Range2,&Blob,key1, color);
 			break;
 			
-			case 'W':
+			case 'W'://FIRA WNL
 			VISION_Game_1Color(Range,Range1,Range2,&Blob,key1, color);
-			
 			break;
-			case 'D': //Fira Obs
+			
+			case 'D': //Fira OBS
 			VISION_Game_OBS(Range,Range1,Range2,&Blob,&Blob1,key1, color);
-			
 			break;
-			case 'K':
 			
+			case 'K': //FIRA BSK
+			VISION_Game_BSK(Range,Range1,Range2,&Blob,&Blob1,key1, color);
 			break;
 			
 		}
@@ -117,13 +130,18 @@ void RunVision_ColorSeg_Struct(VisionRange Range,VisionRange Range1,VisionRange 
 
 		switch(key_Game)//*key1)
 		{			
-			case'B':
+			case'B': // Send Mara Blob(Line and Arrow)
 			TX_Char(1,Blob,Blob1);
 			break;
 			
-			case'D':
-			TX_Char(3,Blob,Blob1);
-			TX_Char(4,Blob,Blob1);
+			case'D': // Send OBS Blob(Floor) and Blob1(Red folder)
+			TX_Char(12,Blob,Blob1); // Floor
+			TX_Char(13,Blob,Blob1); // Red Folder
+			break;
+			
+			case'K': // Send BSK Bolb(Ball) and Blob1(Basket)
+			TX_Char(10,Blob,Blob1);//Ball
+			TX_Char(11,Blob,Blob1);//Basket
 			break;
 		}
 
@@ -193,25 +211,20 @@ int main(int argc, char **argv)
 	char *Argv= argv[1];
 	
 	printf("Setup complete, running main program now\n");
-
-	if(argc==2)
+    
+	if(argc==2) //Tuning Mode
 	{
 		VISION_EnableTuneMode();
 		key = *Argv;
-		key_Game = 0;
 		
 		FILE *file;
 		file=fopen("/mnt/rd/tuning.txt","w");
 		fclose(file);			
 	}
-	else
-	{
-		key_Game = 'B';//rx_buffer[0];
-		key= 0;
-	}
-	switch (key)
+ 
+	switch (key) //Tuning Mode
 		{
-			case 'B'://mara
+			case 'B': //FIRA Mara
 			ReadWriteColortoRD();
 			WriteGameRD();
 			ReadSDWriteRD("ColorM");
@@ -222,7 +235,7 @@ int main(int argc, char **argv)
 									
 			break;
 					
-			case 'D': 
+			case 'D': //FIRA OBS
 			ReadWriteColortoRD();
 			WriteGameRD();	
 			ReadSDWriteRD("ColorO");
@@ -233,7 +246,7 @@ int main(int argc, char **argv)
 													
 			break;
 				
-			case 'W':
+			case 'W': // FIRA WNL
 			ReadWriteColortoRD();
 			WriteGameRD(); 
 			ReadSDWriteRD("ColorW");
@@ -244,7 +257,7 @@ int main(int argc, char **argv)
 									
 			break;
 				
-			case 'K':
+			case 'K': //FIRA BSK
 			ReadWriteColortoRD(); 
 			WriteGameRD(); 
 			ReadSDWriteRD("ColorB");
@@ -253,58 +266,121 @@ int main(int argc, char **argv)
 			//system("./Tuner");					
 			break;
 		}
-	switch (key_Game)
+		
+		if(key == 0)
 		{
-			case 'B'://mara
-			ReadWriteColortoRD();
-			WriteGameRD();
-			ReadSDWriteRD("ColorM");
-			//system("/home/odroid/QT-VS/Tuner/Tuner &");
-			//wait(100);
-			//system("./Tuner");
-			//printf("m\r\n");
-									
-			break;
+			key_Game = 'B';
+			printf("Default Game is %c\n",key_Game);
+			
+			switch (key_Game) // Game Mode
+			{
+				case 'B'://FIRA Mara
+				ReadWriteColortoRD();
+				WriteGameRD();
+				ReadSDWriteRD("ColorM");
+				//system("/home/odroid/QT-VS/Tuner/Tuner &");
+				//wait(100);
+				//system("./Tuner");
+				//printf("m\r\n");
+										
+				break;
+						
+				case 'D': //FIRA OBS
+				ReadWriteColortoRD();
+				WriteGameRD();	
+				ReadSDWriteRD("ColorO");
+				//system("/home/odroid/QT-VS/Tuner/Tuner &");
+				//wait(100);
+				//system("./Tuner");
+				//printf("o\r\n");
+														
+				break;
 					
-			case 'D': 
-			ReadWriteColortoRD();
-			WriteGameRD();	
-			ReadSDWriteRD("ColorO");
-			//system("/home/odroid/QT-VS/Tuner/Tuner &");
-			//wait(100);
-			//system("./Tuner");
-			//printf("o\r\n");
-													
-			break;
-				
-			case 'W':
-			ReadWriteColortoRD();
-			WriteGameRD(); 
-			ReadSDWriteRD("ColorW");
-			//system("/home/odroid/QT-VS/Tuner/Tuner &");
-			//wait(100);
-			//system("./Tuner");	
-			//printf("w\r\n");
-									
-			break;
-				
-			case 'K':
-			ReadWriteColortoRD(); 
-			WriteGameRD(); 
-			ReadSDWriteRD("ColorB");
-			//system("/home/odroid/QT-VS/Tuner/Tuner &");
-			//wait(100);
-			//system("./Tuner");					
-			break;
-		}	
+				case 'W': //FIRA WNL
+				ReadWriteColortoRD();
+				WriteGameRD(); 
+				ReadSDWriteRD("ColorW");
+				//system("/home/odroid/QT-VS/Tuner/Tuner &");
+				//wait(100);
+				//system("./Tuner");	
+				//printf("w\r\n");
+										
+				break;
+					
+				case 'K': //FIRA BSK
+				ReadWriteColortoRD(); 
+				WriteGameRD(); 
+				ReadSDWriteRD("ColorB");
+				//system("/home/odroid/QT-VS/Tuner/Tuner &");
+				//wait(100);
+				//system("./Tuner");					
+				break;
+			}
+		}		
+
 	while(1)
 	{	
 		clock_t begin, end;
-		begin = clock();		
-
-		switch (key)
+		begin = clock();
+			
+		if( LOOP == 0 )
 		{
-			case 'B'://mara
+			if(key == 0 && rx_buffer[0] != '\0')
+			{
+				key_Game = rx_buffer[0];
+				printf("key_Game is %c\n",key_Game);
+				
+				switch (key_Game) // Game Mode
+				{
+					case 'B'://FIRA Mara
+					ReadWriteColortoRD();
+					WriteGameRD();
+					ReadSDWriteRD("ColorM");
+					//system("/home/odroid/QT-VS/Tuner/Tuner &");
+					//wait(100);
+					//system("./Tuner");
+					//printf("m\r\n");
+											
+					break;
+							
+					case 'D': //FIRA OBS
+					ReadWriteColortoRD();
+					WriteGameRD();	
+					ReadSDWriteRD("ColorO");
+					//system("/home/odroid/QT-VS/Tuner/Tuner &");
+					//wait(100);
+					//system("./Tuner");
+					//printf("o\r\n");
+															
+					break;
+						
+					case 'W': //FIRA WNL
+					ReadWriteColortoRD();
+					WriteGameRD(); 
+					ReadSDWriteRD("ColorW");
+					//system("/home/odroid/QT-VS/Tuner/Tuner &");
+					//wait(100);
+					//system("./Tuner");	
+					//printf("w\r\n");
+											
+					break;
+						
+					case 'K': //FIRA BSK
+					ReadWriteColortoRD(); 
+					WriteGameRD(); 
+					ReadSDWriteRD("ColorB");
+					//system("/home/odroid/QT-VS/Tuner/Tuner &");
+					//wait(100);
+					//system("./Tuner");					
+					break;
+				}
+				LOOP = 1;
+			}
+		}	
+		
+		switch (key) //Tuning Mode
+		{
+			case 'B'://FIRA Mara
 			ReadColor();
 			Readfile("tuning",0);
 			Readfile("tuning",1);
@@ -313,7 +389,7 @@ int main(int argc, char **argv)
 			RunVision_ColorSeg_Struct(Range[0],Range[1],Range[2],&key,color);
 			break;
 					
-			case 'D': 
+			case 'D': //FIRA OBS
 			ReadColor();
 			Readfile("tuning",0);
 			Readfile("tuning",1);
@@ -323,7 +399,7 @@ int main(int argc, char **argv)
 								
 			break;
 				
-			case 'W':
+			case 'W': // FIRA WNL
 			ReadColor();
 			Readfile("tuning",0);
 			//printf("color=%d",color);
@@ -331,7 +407,7 @@ int main(int argc, char **argv)
 								
 			break;
 				
-			case 'K': 
+			case 'K':  //FIRA BSK
 			ReadColor();
 			Readfile("tuning",0);
 			Readfile("tuning",1);
@@ -340,9 +416,9 @@ int main(int argc, char **argv)
 								
 			break;
 		}			
-		switch (key_Game)
+		switch (key_Game) //Game Mode
 		{
-			case 'B'://mara
+			case 'B'://FIRA Mara
 			//ReadColor();
 			ReadfileGame("Color",0);
 			ReadfileGame("Color",1);
@@ -351,7 +427,7 @@ int main(int argc, char **argv)
 			RunVision_ColorSeg_Struct(Range[0],Range[1],Range[2],&key,color);
 			break;
 					
-			case 'D': 
+			case 'D': //FIRA OBS
 			//ReadColor();
 			ReadfileGame("Color",0);
 			ReadfileGame("Color",1);
@@ -361,7 +437,7 @@ int main(int argc, char **argv)
 								
 			break;
 				
-			case 'W':
+			case 'W': //FIRA WNL
 			//ReadColor();
 			Readfile("Color",0);
 			//printf("color=%d",color);
@@ -369,7 +445,7 @@ int main(int argc, char **argv)
 								
 			break;
 				
-			case 'K': 
+			case 'K': //FIRA BSK
 			//ReadColor();
 			Readfile("Color",0);
 			Readfile("Color",1);

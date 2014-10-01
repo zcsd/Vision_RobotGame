@@ -543,40 +543,42 @@ int VISION_Game_1Color(VisionRange range, VisionRange range1, VisionRange range2
 	int step_ts = imgThreshed->widthStep/sizeof(unsigned char), step_hsv = imgHSV->widthStep/sizeof(unsigned char);
 	int chanels_hsv = imgHSV->nChannels;
 	
-		for(a=0;a<imgHSV->height;a++)// cut window in Y [0, 240]. if not, imgHSV->height read from above is 240
-		for(b=0;b<imgHSV->width;b++)//cut window in X [0, 320] example for(b=30;b<300;b++)
+	for(a=0;a<imgHSV->height;a++)// cut window in Y [0, 240]. if not, imgHSV->height read from above is 240
+	for(b=0;b<imgHSV->width;b++)//cut window in X [0, 320] example for(b=30;b<300;b++)
+	{
+		H = data_hsv[a*step_hsv+b*chanels_hsv+0];
+		S = data_hsv[a*step_hsv+b*chanels_hsv+1];
+		V = data_hsv[a*step_hsv+b*chanels_hsv+2];
+		//printf("i=%d, h1=%d",Invert[0],min[0]);
+		if(Invert[0]==0)
 		{
-			H = data_hsv[a*step_hsv+b*chanels_hsv+0];
-			S = data_hsv[a*step_hsv+b*chanels_hsv+1];
-			V = data_hsv[a*step_hsv+b*chanels_hsv+2];
-			//printf("i=%d, h1=%d",Invert[0],min[0]);
-			if(Invert[0]==0)
+			if( (H >= min[0] && H <= max[0] && S >= min[1] && S<=max[1] && V>=min[2] && V<=max[2])  )
 			{
-				if( (H >= min[0] && H <= max[0] && S >= min[1] && S<=max[1] && V>=min[2] && V<=max[2])  )
-				{
-					data_ts[a*step_ts+b]=255;
-					//printf("%d\n",data_ts[a*step_ts+b]);
-				}else{
-					data_ts[a*step_ts+b]=0;
-					//printf("%d\n",data_ts[a*step_ts+b]);
-					}
-			}
-			else
-			{
-				if( (H <= min[0] || H >= max[0]) && S >= min[1] && S<=max[1] && V>=min[2] && V<=max[2])
-				{
-					data_ts[a*step_ts+b]=255;
-					//printf("%d\n",data_ts[a*step_ts+b]);
-					
-				}else{
-					data_ts[a*step_ts+b]=0;
-					//printf("%d\n",data_ts[a*step_ts+b]);
-					}
-			}
+				data_ts[a*step_ts+b]=255;
+				//printf("%d\n",data_ts[a*step_ts+b]);
+			}else{
+				data_ts[a*step_ts+b]=0;
+				//printf("%d\n",data_ts[a*step_ts+b]);
+				}
 		}
+		else
+		{
+			if( (H <= min[0] || H >= max[0]) && S >= min[1] && S<=max[1] && V>=min[2] && V<=max[2])
+			{
+				data_ts[a*step_ts+b]=255;
+				//printf("%d\n",data_ts[a*step_ts+b]);
+				
+			}else{
+				data_ts[a*step_ts+b]=0;
+				//printf("%d\n",data_ts[a*step_ts+b]);
+				}
+		}
+	}
 	cvDilate(imgThreshed,imgThreshed,NULL,1);
 	cvErode(imgThreshed,imgThreshed,NULL,1); 
-	//cvShowImage("Threshold",imgThreshed);
+	
+	if(TuneMode)
+		cvShowImage("Threshold",imgThreshed);
 	//cvMoveWindow("Threshold",850,350);
 	
 	cvFindContours(imgThreshed, storage, &contour, sizeof(CvContour), CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, cvPoint(0,0));
@@ -656,7 +658,9 @@ int VISION_Game_1Color(VisionRange range, VisionRange range1, VisionRange range2
 			blob->Ymin = 255;
 			blob->Ymax = 255;
 		}
-	//VISION_ShowOriginalFrame();
+		
+	if(TuneMode)	
+		VISION_ShowOriginalFrame();
 	
 	cvReleaseImage(&imgHSV);
 	cvReleaseImage(&imgThreshed);
@@ -704,7 +708,9 @@ int VISION_Game_OBS(VisionRange range, VisionRange range1, VisionRange range2, B
 	}
 	cvDilate(imgThreshed,imgThreshed,NULL,1);
 	cvErode(imgThreshed,imgThreshed,NULL,1); 
-//	cvShowImage("Threshold",imgThreshed);
+
+	if(TuneMode)
+		cvShowImage("Threshold",imgThreshed);
 	//cvMoveWindow("Threshold",850,350);
 	int max_y;
 	cvFindContours(imgThreshed, storage, &contour, sizeof(CvContour), CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, cvPoint(0,0));
@@ -764,14 +770,14 @@ int VISION_Game_OBS(VisionRange range, VisionRange range1, VisionRange range2, B
 		cvRectangle(frame, cvPoint(0, tmp1), cvPoint(320, 240),CV_RGB(0, 0, 255), 2, 8, 0);
 		//printf("red: (%d , %d) (%d , %d)\n", rect.x,rect.y,rect.x + rect.width,rect.y + rect.height);
 		blob->Xmin = 0;
-		blob->Xmax = 320;
+		blob->Xmax = 160; //320/2
 		blob->Ymin = tmp1;
 		blob->Ymax = 240;
 	}
 	else
 	{
 		blob->Xmin = 0;
-		blob->Xmax = 320;
+		blob->Xmax = 160;//320/2
 		blob->Ymin = 0;
 		blob->Ymax = 240;
 	}
@@ -780,7 +786,9 @@ int VISION_Game_OBS(VisionRange range, VisionRange range1, VisionRange range2, B
 	blob1->Xmax = 255;
 	blob1->Ymin = 255;
 	blob1->Ymax = 255;
-//	VISION_ShowOriginalFrame();
+	
+	if(TuneMode)
+		VISION_ShowOriginalFrame();
 	
 	cvReleaseImage(&imgHSV);
 	cvReleaseImage(&imgThreshed);
@@ -846,7 +854,9 @@ int VISION_Game_BSK(VisionRange range, VisionRange range1, VisionRange range2, B
 	
 	cvDilate(imgThreshed,imgThreshed,NULL,1);
 	cvErode(imgThreshed,imgThreshed,NULL,1); 
-//	cvShowImage("Threshold",imgThreshed);
+	
+	if(TuneMode)
+		cvShowImage("Threshold",imgThreshed);
 	//cvMoveWindow("Threshold",850,350);
 	
 	cvFindContours(imgThreshed, storage, &contour, sizeof(CvContour), CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, cvPoint(0,0));
@@ -934,7 +944,8 @@ int VISION_Game_BSK(VisionRange range, VisionRange range1, VisionRange range2, B
 		blob1->Ymin = 255;
 		blob1->Ymax = 255;
 	
-//	VISION_ShowOriginalFrame();
+	if(TuneMode)
+		VISION_ShowOriginalFrame();
 	
 	cvReleaseImage(&imgHSV);
 	cvReleaseImage(&imgThreshed);
@@ -1009,7 +1020,9 @@ int VISION_Game_ArrowDetect(VisionRange range, VisionRange range1, VisionRange r
 		
 	cvDilate(imgThreshed,imgThreshed,NULL,1);
 	cvErode(imgThreshed,imgThreshed,NULL,1); 
-//	cvShowImage("Threshold",imgThreshed);
+	
+	if(TuneMode)
+		cvShowImage("Threshold",imgThreshed);
 //	cvMoveWindow("Threshold",500,350);
 	
 	cvFindContours(imgThreshed, storage, &contour, sizeof(CvContour), CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, cvPoint(0,0));
@@ -1612,7 +1625,8 @@ int VISION_Game_ArrowDetect(VisionRange range, VisionRange range1, VisionRange r
 	
 	flag = 0;
 	
-//	VISION_ShowOriginalFrame();
+	if(TuneMode)
+		VISION_ShowOriginalFrame();
 	
 	cvReleaseImage(&imgHSV);
 	cvReleaseImage(&imgThreshed);

@@ -1,4 +1,23 @@
 ==========================================================================
+          Vision Code v2.31 for ODROID U3+
+==========================================================================
+>>> Date: 1 OCT 2014
+
+>>> New functionality/features
+
+    * Add Tune mode, can see image
+        
+>>> Changes
+    
+    * Check buffer 
+	
+>>> Folder 
+
+    * /home/odroid/Vision/Process
+    * /home/odroid/Vision/Tuner
+    * /home/odroid/Vision/Data
+
+==========================================================================
           Vision Code v2.3 for ODROID U3+
 ==========================================================================
 >>> Date: 1 OCT 2014

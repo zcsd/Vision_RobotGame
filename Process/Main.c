@@ -2,7 +2,7 @@
 //															//
 //			 VisionSystem for Humanoid Robot				//
 //															//
-//						  V2.3								//
+//						  V2.31								//
 //															//
 //				    For ODROID U3+							//
 //															//
@@ -267,14 +267,19 @@ int main(int argc, char **argv)
 			break;
 		}
 		
-		if(key == 0)
+		if(key==0 || key=='b' || key=='d' || key=='w' || key=='k' )
 		{
-			key_Game = 'B';
+			if(key==0)
+				key_Game = 'b';
+			else
+				key_Game = key;
+			
 			printf("Default Game is %c\n",key_Game);
 			
 			switch (key_Game) // Game Mode
 			{
-				case 'B'://FIRA Mara
+				case 'b'://FIRA Mara
+				key_Game='B';
 				ReadWriteColortoRD();
 				WriteGameRD();
 				ReadSDWriteRD("ColorM");
@@ -285,7 +290,8 @@ int main(int argc, char **argv)
 										
 				break;
 						
-				case 'D': //FIRA OBS
+				case 'd': //FIRA OBS
+				key_Game='D';
 				ReadWriteColortoRD();
 				WriteGameRD();	
 				ReadSDWriteRD("ColorO");
@@ -296,7 +302,8 @@ int main(int argc, char **argv)
 														
 				break;
 					
-				case 'W': //FIRA WNL
+				case 'w': //FIRA WNL
+				key_Game='W';
 				ReadWriteColortoRD();
 				WriteGameRD(); 
 				ReadSDWriteRD("ColorW");
@@ -307,7 +314,8 @@ int main(int argc, char **argv)
 										
 				break;
 					
-				case 'K': //FIRA BSK
+				case 'k': //FIRA BSK
+				key_Game='K';
 				ReadWriteColortoRD(); 
 				WriteGameRD(); 
 				ReadSDWriteRD("ColorB");
@@ -325,7 +333,8 @@ int main(int argc, char **argv)
 			
 		if( LOOP == 0 )
 		{
-			if(key == 0 && rx_buffer[0] != '\0')
+			if(key == 0 && ( rx_buffer[0] == 'B' || rx_buffer[0] == 'D' || rx_buffer[0] == 'K') )
+//			if(key == 0 && rx_buffer[0] != '\0') 
 			{
 				key_Game = rx_buffer[0];
 				printf("key_Game is %c\n",key_Game);

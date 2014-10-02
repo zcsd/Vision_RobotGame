@@ -1,4 +1,23 @@
 ==========================================================================
+          Vision Code v2.4 for ODROID U3+
+==========================================================================
+>>> Date: 2 OCT 2014
+
+>>> New functionality/features
+
+    * Add second color for BSK and OBS
+        
+>>> Changes
+    
+    * fix read file bug for WNL AND BSK
+	
+>>> Folder 
+
+    * /home/odroid/Vision/Process
+    * /home/odroid/Vision/Tuner
+    * /home/odroid/Vision/Data
+
+==========================================================================
           Vision Code v2.31 for ODROID U3+
 ==========================================================================
 >>> Date: 1 OCT 2014

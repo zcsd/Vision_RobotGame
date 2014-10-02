@@ -2,7 +2,7 @@
 //															//
 //			 VisionSystem for Humanoid Robot				//
 //															//
-//						  V2.31								//
+//						  V2.4								//
 //															//
 //				    For ODROID U3+							//
 //															//
@@ -448,7 +448,7 @@ int main(int argc, char **argv)
 				
 			case 'W': //FIRA WNL
 			//ReadColor();
-			Readfile("Color",0);
+			ReadfileGame("Color",0);
 			//printf("color=%d",color);
 			RunVision_ColorSeg_Struct(Range[0],Range[1],Range[2],&key,color);
 								
@@ -456,8 +456,8 @@ int main(int argc, char **argv)
 				
 			case 'K': //FIRA BSK
 			//ReadColor();
-			Readfile("Color",0);
-			Readfile("Color",1);
+			ReadfileGame("Color",0);
+			ReadfileGame("Color",1);
 			//printf("color=%d",color);
 			RunVision_ColorSeg_Struct(Range[0],Range[1],Range[2],&key,color);
 								

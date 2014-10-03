@@ -2,7 +2,7 @@
 //															//
 //			 VisionSystem for Humanoid Robot				//
 //															//
-//						  V2.4								//
+//						  V2.5								//
 //															//
 //				    For ODROID U3+							//
 //															//
@@ -143,10 +143,13 @@ void RunVision_ColorSeg_Struct(VisionRange Range,VisionRange Range1,VisionRange 
 			TX_Char(10,Blob,Blob1);//Ball
 			TX_Char(11,Blob,Blob1);//Basket
 			break;
+			
+			case'W': // WNL
+			TX_Char(1,Blob,Blob1);
+			break;
 		}
 
 		FrameGrabDone=0;
-//		printf("\r\nBlobX: %d\t%d\r\nBlobY: %d\t%d", Blob.Xmin, Blob.Xmax, Blob.Ymin, Blob.Ymax);
 	}
 }
 
@@ -199,7 +202,7 @@ int main(int argc, char **argv)
 {
 	//init ialized component
 	UART_Init();
-	VISION_InitCam(); //open it when using webcam
+	VISION_InitCam(); 
 	
 	// setup thread identifier
 	pthread_t pth_UARTRx, pthFrameGrab;
@@ -333,7 +336,7 @@ int main(int argc, char **argv)
 			
 		if( LOOP == 0 )
 		{
-			if(key == 0 && ( rx_buffer[0] == 'B' || rx_buffer[0] == 'D' || rx_buffer[0] == 'K') )
+			if(key == 0 && ( rx_buffer[0] == 'B' || rx_buffer[0] == 'D' || rx_buffer[0] == 'K' || rx_buffer[0] == 'W') )
 //			if(key == 0 && rx_buffer[0] != '\0') 
 			{
 				key_Game = rx_buffer[0];

@@ -1,4 +1,23 @@
 ==========================================================================
+          Vision Code v2.5 for ODROID U3+
+==========================================================================
+>>> Date: 3 OCT 2014
+
+>>> New functionality/features
+
+    * Separate contour for Mara,PutText for BSK
+        
+>>> Changes
+    
+    * Add Tx for WNL,remove color check for tuning
+	
+>>> Folder 
+
+    * /home/odroid/Vision/Process
+    * /home/odroid/Vision/Tuner
+    * /home/odroid/Vision/Data
+
+==========================================================================
           Vision Code v2.4 for ODROID U3+
 ==========================================================================
 >>> Date: 2 OCT 2014

@@ -68,8 +68,6 @@ int VISION_InitCam()
 	cvSetCaptureProperty(capture,CV_CAP_PROP_FRAME_WIDTH,320);
 	cvSetCaptureProperty(capture,CV_CAP_PROP_FRAME_HEIGHT,240);
 
-	//cvNamedWindow("ColourDetection",1);
-
 	return(0);
 }
 
@@ -81,9 +79,7 @@ void VISION_DestoryCam()
 
 int VISION_GrabFrame() // initialization
 {
-	//storage = cvCreateMemStorage( 0 );//hide this one when using webcam
-	//frame = cvLoadImage("/home/odroid/photo/img.jpg",1);//for Pi cam
-	frame = cvQueryFrame(capture);//hide this when using pi cam
+	frame = cvQueryFrame(capture);
 
 	if( !frame )
 	{
@@ -95,12 +91,7 @@ int VISION_GrabFrame() // initialization
 
 int VISION_ShowOriginalFrame()
 {
-	//if(TuneMode==1)
-	//count++;
-	//if(count%3==0) //time to save pic
 	cvShowImage("Original",frame);
-//	cvMoveWindow("Original",850,50);
-		//cvSaveImage("/mnt/rd/frame.ppm",frame,0);
 	return(1);
 }
 
@@ -114,10 +105,10 @@ void VISION_DisableTuneMode()
 	TuneMode = 0;
 }
 	
-int VISION_Tune_Color1(VisionRange range, VisionRange range1, VisionRange range2, BlobCoord *blob,char *gameplay, Color color)//so far, maximum detect 3 colors, return 2 blob coornidate (yellow, blue&Red)
+int VISION_Tune_Color1(VisionRange range, VisionRange range1, VisionRange range2, BlobCoord *blob,char *gameplay, Color color)
 {
 	LoadValueColor(range,range1,range2);
-	//printf("color1");
+//	printf("color1");
 	IplImage *imgHSV=cvCreateImage(cvGetSize(frame),IPL_DEPTH_8U,3);
 	cvCvtColor(frame, imgHSV, CV_BGR2HSV_FULL);
 	IplImage *imgThreshed=cvCreateImage(cvGetSize(frame),IPL_DEPTH_8U,1);
@@ -127,7 +118,7 @@ int VISION_Tune_Color1(VisionRange range, VisionRange range1, VisionRange range2
 	CvPoint *pt;
 	CvScalar data;
 	unsigned char H,S,V;
-	int a=0,b=0,l=0,i,m; //a & b = for loop for height and width, l = for loop for contour, i & m= for compare area
+	int a=0,b=0,l=0,i,m; 
 	int maxX[6]={0},maxY[6]={0};
 	int total=0, avg,total_S=0, avg_S=0,total_V=0, avg_V=0;
 	int cnt1=0,cnt2=0,cnt3=0,cnt4=0;
@@ -138,35 +129,35 @@ int VISION_Tune_Color1(VisionRange range, VisionRange range1, VisionRange range2
 	int step_ts = imgThreshed->widthStep/sizeof(unsigned char), step_hsv = imgHSV->widthStep/sizeof(unsigned char);
 	int chanels_hsv = imgHSV->nChannels;
 	
-	for(a=0;a<imgHSV->height;a++)// cut window in Y [0, 240]. if not, imgHSV->height read from above is 240
-	for(b=0;b<imgHSV->width;b++)//cut window in X [0, 320] example for(b=30;b<300;b++)
+	for(a=0;a<imgHSV->height;a++)
+	for(b=0;b<imgHSV->width;b++)
 	{
 		H = data_hsv[a*step_hsv+b*chanels_hsv+0];
 		S = data_hsv[a*step_hsv+b*chanels_hsv+1];
 		V = data_hsv[a*step_hsv+b*chanels_hsv+2];
-		//printf("i=%d, h1=%d",Invert[0],min[0]);
+
 		if(Invert[0]==0)
 		{
 			if( (H >= min[0] && H <= max[0] && S >= min[1] && S<=max[1] && V>=min[2] && V<=max[2])  )
 			{
 				data_ts[a*step_ts+b]=255;
-				//printf("%d\n",data_ts[a*step_ts+b]);
-			}else{
+			}
+			else
+			{
 				data_ts[a*step_ts+b]=0;
-				//printf("%d\n",data_ts[a*step_ts+b]);
-				}
+			}
 		}
 		else
 		{
 			if( (H <= min[0] || H >= max[0]) && S >= min[1] && S<=max[1] && V>=min[2] && V<=max[2])
 			{
 				data_ts[a*step_ts+b]=255;
-				//printf("%d\n",data_ts[a*step_ts+b]);
 				
-			}else{
+			}
+			else
+			{
 				data_ts[a*step_ts+b]=0;
-				//printf("%d\n",data_ts[a*step_ts+b]);
-				}
+			}
 		}
 	}
 		
@@ -188,10 +179,10 @@ int VISION_Tune_Color1(VisionRange range, VisionRange range1, VisionRange range2
 			continue;
 		}
 		
-		cnt1++;// after threhold , back to trace color cluster. file 0 data read in. if fulfil, then cnt=1 and it is 1st color
-		//printf("cnt1=%d\n",cnt1);
+		cnt1++;
+	
 		for(i = N-1; i >= 0; --i)
-		{//printf("area1=%d,maxArea=%d\n",area1,maxArea1[i]);
+		{
 			if(area1 > maxArea1[i])
 			{
 				maxArea1[i] = area1;
@@ -206,7 +197,7 @@ int VISION_Tune_Color1(VisionRange range, VisionRange range1, VisionRange range2
 						maxArea1[m+1] = maxArea1[m];
 						contours1[m+1] = contours1[m];
 						maxArea1[m] = tmp_area1;
-						contours1[m] = tmp_cont;//printf("m1=%d\n",m);
+						contours1[m] = tmp_cont;
 					}
 				}
 				break;
@@ -219,8 +210,6 @@ int VISION_Tune_Color1(VisionRange range, VisionRange range1, VisionRange range2
 	{
 		CvRect rect = ((CvContour*)contours1[0])->rect;
 		cvRectangle(frame, cvPoint(rect.x, rect.y), cvPoint(rect.x + rect.width, rect.y + rect.height),CV_RGB(0, 0, 255), 2, 8, 0);
-		//printf("red: (%d , %d) (%d , %d)\n", rect.x,rect.y,rect.x + rect.width,rect.y + rect.height);
-		
 	}
 	
 	VISION_ShowOriginalFrame();
@@ -231,10 +220,10 @@ int VISION_Tune_Color1(VisionRange range, VisionRange range1, VisionRange range2
 	return(1);
 }
 
-int VISION_Tune_Color2(VisionRange range, VisionRange range1, VisionRange range2, BlobCoord *blob,char *gameplay, Color color)//so far, maximum detect 3 colors, return 2 blob coornidate (yellow, blue&Red)
+int VISION_Tune_Color2(VisionRange range, VisionRange range1, VisionRange range2, BlobCoord *blob,char *gameplay, Color color)
 {
 	LoadValueColor(range,range1,range2);
-	//printf("color2");
+//	printf("color2");
 	IplImage *imgHSV=cvCreateImage(cvGetSize(frame),IPL_DEPTH_8U,3);
 	cvCvtColor(frame, imgHSV, CV_BGR2HSV_FULL);
 	IplImage *imgThreshed=cvCreateImage(cvGetSize(frame),IPL_DEPTH_8U,1);
@@ -244,7 +233,7 @@ int VISION_Tune_Color2(VisionRange range, VisionRange range1, VisionRange range2
 	CvPoint *pt;
 	CvScalar data;
 	unsigned char H,S,V;
-	int a=0,b=0,l=0,i,m; //a & b = for loop for height and width, l = for loop for contour, i & m= for compare area
+	int a=0,b=0,l=0,i,m; 
 	int maxX[6]={0},maxY[6]={0};
 	int total=0, avg,total_S=0, avg_S=0,total_V=0, avg_V=0;
 	int cnt1=0,cnt2=0,cnt3=0,cnt4=0;
@@ -255,8 +244,8 @@ int VISION_Tune_Color2(VisionRange range, VisionRange range1, VisionRange range2
 	int step_ts = imgThreshed->widthStep/sizeof(unsigned char), step_hsv = imgHSV->widthStep/sizeof(unsigned char);
 	int chanels_hsv = imgHSV->nChannels;
 	
-	for(a=0;a<imgHSV->height;a++)// cut window in Y [0, 240]. if not, imgHSV->height read from above is 240
-	for(b=0;b<imgHSV->width;b++)//cut window in X [0, 320] example for(b=30;b<300;b++)
+	for(a=0;a<imgHSV->height;a++)
+	for(b=0;b<imgHSV->width;b++)
 	{
 		H = data_hsv[a*step_hsv+b*chanels_hsv+0];
 		S = data_hsv[a*step_hsv+b*chanels_hsv+1];
@@ -267,28 +256,28 @@ int VISION_Tune_Color2(VisionRange range, VisionRange range1, VisionRange range2
 			if( (H >= min1[0] && H <= max1[0] && S >= min1[1] && S<=max1[1] && V>=min1[2] && V<=max1[2])  )
 			{
 				data_ts[a*step_ts+b]=255;
-				//printf("%d\n",data_ts[a*step_ts+b]);
-			}else{
+			}
+			else
+			{
 				data_ts[a*step_ts+b]=0;
-				//printf("%d\n",data_ts[a*step_ts+b]);
-				}
+			}
 		}
 		else
 		{
 			if( (H <= min1[0] || H >= max1[0]) && S >= min1[1] && S<=max1[1] && V>=min1[2] && V<=max1[2])
 			{
-				data_ts[a*step_ts+b]=255;
-				//printf("%d\n",data_ts[a*step_ts+b]);
-				
-			}else{
+				data_ts[a*step_ts+b]=255;	
+			}
+			else
+			{
 				data_ts[a*step_ts+b]=0;
-				//printf("%d\n",data_ts[a*step_ts+b]);
-				}
+			}
 		}
 	}
 		
 	cvDilate(imgThreshed,imgThreshed,NULL,1);
-	cvErode(imgThreshed,imgThreshed,NULL,1); 
+	cvErode(imgThreshed,imgThreshed,NULL,1);
+	 
 	cvShowImage("Threshold",imgThreshed);
 //	cvMoveWindow("Threshold",850,350);
 	
@@ -304,8 +293,8 @@ int VISION_Tune_Color2(VisionRange range, VisionRange range1, VisionRange range2
 			continue;
 		}
 
-		cnt2++;// after threhold , back to trace color cluster. file 0 data read in. if fulfil, then cnt=1 and it is 1st color
-		//printf("cnt2=%d\n",cnt2);
+		cnt2++;
+
 		for(i = N-1; i >= 0; --i)
 		{
 			if(area1 > maxArea2[i])
@@ -322,7 +311,7 @@ int VISION_Tune_Color2(VisionRange range, VisionRange range1, VisionRange range2
 						maxArea2[m+1] = maxArea2[m];
 						contours2[m+1] = contours2[m];
 						maxArea2[m] = tmp_area1;
-						contours2[m] = tmp_cont;//printf("m2=%d\n",m);
+						contours2[m] = tmp_cont;
 					}
 				}
 				break;
@@ -334,7 +323,6 @@ int VISION_Tune_Color2(VisionRange range, VisionRange range1, VisionRange range2
 	{
 		CvRect rect = ((CvContour*)contours2[0])->rect;
 		cvRectangle(frame, cvPoint(rect.x, rect.y), cvPoint(rect.x + rect.width, rect.y + rect.height),CV_RGB(0, 180, 0), 2, 8, 0);
-		//printf("red: (%d , %d) (%d , %d)\n", rect.x,rect.y,rect.x + rect.width,rect.y + rect.height);	
 	}
 		
 	VISION_ShowOriginalFrame();
@@ -345,10 +333,10 @@ int VISION_Tune_Color2(VisionRange range, VisionRange range1, VisionRange range2
 	return(1);
 }
 
-int VISION_Tune_Color3(VisionRange range, VisionRange range1, VisionRange range2, BlobCoord *blob,char *gameplay, Color color)//so far, maximum detect 3 colors, return 2 blob coornidate (yellow, blue&Red)
+int VISION_Tune_Color3(VisionRange range, VisionRange range1, VisionRange range2, BlobCoord *blob,char *gameplay, Color color)
 {
 	LoadValueColor(range,range1,range2);
-	//printf("color3");
+//	printf("color3");
 	IplImage *imgHSV=cvCreateImage(cvGetSize(frame),IPL_DEPTH_8U,3);
 	cvCvtColor(frame, imgHSV, CV_BGR2HSV_FULL);
 	IplImage *imgThreshed=cvCreateImage(cvGetSize(frame),IPL_DEPTH_8U,1);
@@ -358,7 +346,7 @@ int VISION_Tune_Color3(VisionRange range, VisionRange range1, VisionRange range2
 	CvPoint *pt;
 	CvScalar data;
 	unsigned char H,S,V;
-	int a=0,b=0,l=0,i,m; //a & b = for loop for height and width, l = for loop for contour, i & m= for compare area
+	int a=0,b=0,l=0,i,m; 
 	int maxX[6]={0},maxY[6]={0};
 	int total=0, avg,total_S=0, avg_S=0,total_V=0, avg_V=0;
 	int cnt1=0,cnt2=0,cnt3=0,cnt4=0;
@@ -369,8 +357,8 @@ int VISION_Tune_Color3(VisionRange range, VisionRange range1, VisionRange range2
 	int step_ts = imgThreshed->widthStep/sizeof(unsigned char), step_hsv = imgHSV->widthStep/sizeof(unsigned char);
 	int chanels_hsv = imgHSV->nChannels;
 	
-	for(a=0;a<imgHSV->height;a++)// cut window in Y [0, 240]. if not, imgHSV->height read from above is 240
-	for(b=0;b<imgHSV->width;b++)//cut window in X [0, 320] example for(b=30;b<300;b++)
+	for(a=0;a<imgHSV->height;a++)
+	for(b=0;b<imgHSV->width;b++)
 	{
 		H = data_hsv[a*step_hsv+b*chanels_hsv+0];
 		S = data_hsv[a*step_hsv+b*chanels_hsv+1];
@@ -381,29 +369,30 @@ int VISION_Tune_Color3(VisionRange range, VisionRange range1, VisionRange range2
 			if( (H >= min2[0] && H <= max2[0] && S >= min2[1] && S<=max2[1] && V>=min2[2] && V<=max2[2])  )
 			{
 				data_ts[a*step_ts+b]=255;
-				//printf("%d\n",data_ts[a*step_ts+b]);
-			}else{
+			}
+			else
+			{
 				data_ts[a*step_ts+b]=0;
-				//printf("%d\n",data_ts[a*step_ts+b]);
-				}
+			}
 		}
 		else
 		{
 			if( (H <= min2[0] || H >= max2[0]) && S >= min2[1] && S<=max2[1] && V>=min2[2] && V<=max2[2])
 			{
 				data_ts[a*step_ts+b]=255;
-				//printf("%d\n",data_ts[a*step_ts+b]);
 				
-			}else{
+			}
+			else
+			{
 				data_ts[a*step_ts+b]=0;
-				//printf("%d\n",data_ts[a*step_ts+b]);
-				}
+			}
 		}
 	}
 	cvDilate(imgThreshed,imgThreshed,NULL,1);
 	cvErode(imgThreshed,imgThreshed,NULL,1); 
+	
 	cvShowImage("Threshold",imgThreshed);
-//		cvMoveWindow("Threshold",850,350);
+//	cvMoveWindow("Threshold",850,350);
 	
 	cvFindContours(imgThreshed, storage, &contour, sizeof(CvContour), CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, cvPoint(0,0));
 
@@ -417,8 +406,8 @@ int VISION_Tune_Color3(VisionRange range, VisionRange range1, VisionRange range2
 			continue;
 		}
 
-		cnt3++;// after threhold , back to trace color cluster. file 0 data read in. if fulfil, then cnt=1 and it is 1st color
-		//printf("cnt3=%d\n",cnt3);
+		cnt3++;
+		
 		for(i = N-1; i >= 0; --i)
 		{
 			if(area1 > maxArea3[i])
@@ -447,7 +436,6 @@ int VISION_Tune_Color3(VisionRange range, VisionRange range1, VisionRange range2
 	{
 		CvRect rect = ((CvContour*)contours3[0])->rect;
 		cvRectangle(frame, cvPoint(rect.x, rect.y), cvPoint(rect.x + rect.width, rect.y + rect.height),CV_RGB(0, 0, 0), 2, 8, 0);
-		//printf("red: (%d , %d) (%d , %d)\n", rect.x,rect.y,rect.x + rect.width,rect.y + rect.height);
 	}
 	
 	VISION_ShowOriginalFrame();
@@ -458,10 +446,10 @@ int VISION_Tune_Color3(VisionRange range, VisionRange range1, VisionRange range2
 	return(1);
 }
 
-int VISION_Game_1Color(VisionRange range, VisionRange range1, VisionRange range2, BlobCoord *blob,char *gameplay, Color color)//so far, maximum detect 3 colors, return 2 blob coornidate (yellow, blue&Red)
+int VISION_Game_1Color(VisionRange range, VisionRange range1, VisionRange range2, BlobCoord *blob,char *gameplay, Color color)
 {
 	LoadValueColor(range,range1,range2);
-	//printf("Game color1\n");
+//	printf("Game color1\n");
 	IplImage *imgHSV=cvCreateImage(cvGetSize(frame),IPL_DEPTH_8U,3);
 	cvCvtColor(frame, imgHSV, CV_BGR2HSV_FULL);
 	IplImage *imgThreshed=cvCreateImage(cvGetSize(frame),IPL_DEPTH_8U,1);
@@ -471,7 +459,7 @@ int VISION_Game_1Color(VisionRange range, VisionRange range1, VisionRange range2
 	CvPoint *pt;
 	CvScalar data;
 	unsigned char H,S,V;
-	int a=0,b=0,l=0,i,m; //a & b = for loop for height and width, l = for loop for contour, i & m= for compare area
+	int a=0,b=0,l=0,i,m; 
 	int maxX[6]={0},maxY[6]={0};
 	int total=0, avg,total_S=0, avg_S=0,total_V=0, avg_V=0;
 	int cnt1=0,cnt2=0,cnt3=0,cnt4=0;
@@ -482,35 +470,34 @@ int VISION_Game_1Color(VisionRange range, VisionRange range1, VisionRange range2
 	int step_ts = imgThreshed->widthStep/sizeof(unsigned char), step_hsv = imgHSV->widthStep/sizeof(unsigned char);
 	int chanels_hsv = imgHSV->nChannels;
 	
-	for(a=0;a<imgHSV->height;a++)// cut window in Y [0, 240]. if not, imgHSV->height read from above is 240
-	for(b=0;b<imgHSV->width;b++)//cut window in X [0, 320] example for(b=30;b<300;b++)
+	for(a=0;a<imgHSV->height;a++)
+	for(b=0;b<imgHSV->width;b++)
 	{
 		H = data_hsv[a*step_hsv+b*chanels_hsv+0];
 		S = data_hsv[a*step_hsv+b*chanels_hsv+1];
 		V = data_hsv[a*step_hsv+b*chanels_hsv+2];
-		//printf("i=%d, h1=%d",Invert[0],min[0]);
+		
 		if(Invert[0]==0)
 		{
 			if( (H >= min[0] && H <= max[0] && S >= min[1] && S<=max[1] && V>=min[2] && V<=max[2])  )
 			{
 				data_ts[a*step_ts+b]=255;
-				//printf("%d\n",data_ts[a*step_ts+b]);
-			}else{
+			}
+			else
+			{
 				data_ts[a*step_ts+b]=0;
-				//printf("%d\n",data_ts[a*step_ts+b]);
-				}
+			}
 		}
 		else
 		{
 			if( (H <= min[0] || H >= max[0]) && S >= min[1] && S<=max[1] && V>=min[2] && V<=max[2])
 			{
-				data_ts[a*step_ts+b]=255;
-				//printf("%d\n",data_ts[a*step_ts+b]);
-				
-			}else{
+				data_ts[a*step_ts+b]=255;	
+			}
+			else
+			{
 				data_ts[a*step_ts+b]=0;
-				//printf("%d\n",data_ts[a*step_ts+b]);
-				}
+			}
 		}
 	}
 	cvDilate(imgThreshed,imgThreshed,NULL,1);
@@ -518,7 +505,7 @@ int VISION_Game_1Color(VisionRange range, VisionRange range1, VisionRange range2
 	
 	if(TuneMode)
 		cvShowImage("Threshold",imgThreshed);
-	//cvMoveWindow("Threshold",850,350);
+//	cvMoveWindow("Threshold",850,350);
 	
 	cvFindContours(imgThreshed, storage, &contour, sizeof(CvContour), CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, cvPoint(0,0));
 
@@ -532,10 +519,10 @@ int VISION_Game_1Color(VisionRange range, VisionRange range1, VisionRange range2
 			continue;
 		}
 		
-		cnt1++;// after threhold , back to trace color cluster. file 0 data read in. if fulfil, then cnt=1 and it is 1st color
-		//printf("cnt1=%d\n",cnt1);
+		cnt1++;
+		
 		for(i = N-1; i >= 0; --i)
-		{//printf("area1=%d,maxArea=%d\n",area1,maxArea1[i]);
+		{
 			if(area1 > maxArea1[i])
 			{
 				maxArea1[i] = area1;
@@ -550,7 +537,7 @@ int VISION_Game_1Color(VisionRange range, VisionRange range1, VisionRange range2
 						maxArea1[m+1] = maxArea1[m];
 						contours1[m+1] = contours1[m];
 						maxArea1[m] = tmp_area1;
-						contours1[m] = tmp_cont;//printf("m1=%d\n",m);
+						contours1[m] = tmp_cont;
 					}
 				}
 				break;
@@ -563,7 +550,7 @@ int VISION_Game_1Color(VisionRange range, VisionRange range1, VisionRange range2
 		{
 			CvRect rect = ((CvContour*)contours1[0])->rect;
 			cvRectangle(frame, cvPoint(rect.x, rect.y), cvPoint(rect.x + rect.width, rect.y + rect.height),CV_RGB(0, 0, 255), 2, 8, 0);
-			//printf("red: (%d , %d) (%d , %d)\n", rect.x,rect.y,rect.x + rect.width,rect.y + rect.height);
+
 			blob->Xmin = rect.x / 2;
 			blob->Xmax = (rect.x + rect.width) / 2;
 			blob->Ymin = rect.y;
@@ -589,7 +576,7 @@ int VISION_Game_1Color(VisionRange range, VisionRange range1, VisionRange range2
 int VISION_Game_OBS(VisionRange range, VisionRange range1, VisionRange range2, BlobCoord *blob,BlobCoord *blob1,char *gameplay, Color color)
 {
 	LoadValueColor(range,range1,range2);
-	//printf("Game OBS\n");
+//	printf("Game OBS\n");
 	IplImage *imgHSV=cvCreateImage(cvGetSize(frame),IPL_DEPTH_8U,3);
 	cvCvtColor(frame, imgHSV, CV_BGR2HSV_FULL);
 	IplImage *imgThreshed=cvCreateImage(cvGetSize(frame),IPL_DEPTH_8U,1);
@@ -599,7 +586,7 @@ int VISION_Game_OBS(VisionRange range, VisionRange range1, VisionRange range2, B
 	CvPoint *pt;
 	CvScalar data;
 	unsigned char H,S,V;
-	int a=0,b=0,l=0,i,m,k,tmp,tmp1; //a & b = for loop for height and width, l = for loop for contour, i & m= for compare area
+	int a=0,b=0,l=0,i,m,k,tmp,tmp1; 
 	int maxX[6]={0},maxY[6]={0};
 	int total=0, avg,total_S=0, avg_S=0,total_V=0, avg_V=0;
 	int cnt1=0,cnt2=0,cnt3=0,cnt4=0;
@@ -610,8 +597,8 @@ int VISION_Game_OBS(VisionRange range, VisionRange range1, VisionRange range2, B
 	int step_ts = imgThreshed->widthStep/sizeof(unsigned char), step_hsv = imgHSV->widthStep/sizeof(unsigned char);
 	int chanels_hsv = imgHSV->nChannels;
 	
-	for(a=0;a<imgHSV->height;a++)// cut window in Y [0, 240]. if not, imgHSV->height read from above is 240
-	for(b=0;b<imgHSV->width;b++)//cut window in X [0, 320] example for(b=30;b<300;b++)
+	for(a=0;a<imgHSV->height;a++)
+	for(b=0;b<imgHSV->width;b++)
 	{
 		H = data_hsv[a*step_hsv+b*chanels_hsv+0];
 		S = data_hsv[a*step_hsv+b*chanels_hsv+1];
@@ -644,10 +631,10 @@ int VISION_Game_OBS(VisionRange range, VisionRange range1, VisionRange range2, B
 			continue;
 		}
 
-			cnt1++;// after threhold , back to trace color cluster. file 0 data read in. if fulfil, then cnt=1 and it is 1st color
-			//printf("cnt1=%d\n",cnt1);
+			cnt1++;
+			
 			for(i = N-1; i >= 0; --i)
-			{//printf("area1=%d,maxArea=%d\n",area1,maxArea1[i]);
+			{
 				if(area1 > maxArea1[i])
 				{
 					maxArea1[i] = area1;
@@ -662,7 +649,7 @@ int VISION_Game_OBS(VisionRange range, VisionRange range1, VisionRange range2, B
 							maxArea1[m+1] = maxArea1[m];
 							contours1[m+1] = contours1[m];
 							maxArea1[m] = tmp_area1;
-							contours1[m] = tmp_cont;//printf("m1=%d\n",m);
+							contours1[m] = tmp_cont;
 						}
 					}
 					break;
@@ -670,6 +657,7 @@ int VISION_Game_OBS(VisionRange range, VisionRange range1, VisionRange range2, B
 			}
 			
 		max_y=0;
+		
 		for(k=0;k<contours1[0]->total;++k)
 		{
 			pt=(CvPoint *)cvGetSeqElem(contours1[0],k);
@@ -679,40 +667,42 @@ int VISION_Game_OBS(VisionRange range, VisionRange range1, VisionRange range2, B
 				max_y=tmp;
 			}
 		}
+		
 		tmp1=max_y;		
 			
 	}	
 	
 	//For second color,red color folder
-	for(a=0;a<imgHSV->height;a++)// cut window in Y [0, 240]. if not, imgHSV->height read from above is 240
-	for(b=0;b<imgHSV->width;b++)//cut window in X [0, 320] example for(b=30;b<300;b++)
+	for(a=0;a<imgHSV->height;a++)
+	for(b=0;b<imgHSV->width;b++)
 	{
 		H = data_hsv[a*step_hsv+b*chanels_hsv+0];
 		S = data_hsv[a*step_hsv+b*chanels_hsv+1];
 		V = data_hsv[a*step_hsv+b*chanels_hsv+2];
-		//printf("i=%d, h1=%d",Invert[0],min[0]);
+
 		if(Invert[1]==0)
 		{
 			if( (H >= min1[0] && H <= max1[0] && S >= min1[1] && S<=max1[1] && V>=min1[2] && V<=max1[2]))
 			{
 				data_ts[a*step_ts+b]=255;
-				//printf("%d\n",data_ts[a*step_ts+b]);
-			}else{
+
+			}
+			else
+			{
 				data_ts[a*step_ts+b]=0;
-				//printf("%d\n",data_ts[a*step_ts+b]);
-				}
+			}
 		}
 		else
 		{
 			if( ((H <= min1[0] || H >= max1[0]) && S >= min1[1] && S<=max1[1] && V>=min1[2] && V<=max1[2]) )
 			{
 				data_ts[a*step_ts+b]=255;
-				//printf("%d\n",data_ts[a*step_ts+b]);
 				
-			}else{
+			}
+			else
+			{
 				data_ts[a*step_ts+b]=0;
-				//printf("%d\n",data_ts[a*step_ts+b]);
-				}
+			}
 		}
 	}
 	
@@ -728,8 +718,8 @@ int VISION_Game_OBS(VisionRange range, VisionRange range1, VisionRange range2, B
 			continue;
 		}
 		
-		cnt2++;// after threhold , back to trace color cluster. file 0 data read in. if fulfil, then cnt=1 and it is 1st color
-//		printf("cnt2=%d\n",cnt2);
+		cnt2++;
+		
 		for(i = N-1; i >= 0; --i)
 		{
 			if(area1 > maxArea2[i])
@@ -746,20 +736,18 @@ int VISION_Game_OBS(VisionRange range, VisionRange range1, VisionRange range2, B
 						maxArea2[m+1] = maxArea2[m];
 						contours2[m+1] = contours2[m];
 						maxArea2[m] = tmp_area1;
-						contours2[m] = tmp_cont;//printf("m2=%d\n",m);
+						contours2[m] = tmp_cont;
 					}
 				}
 				break;
 			}
 		}
-	
 	}
 			
 	if(cnt1 != 0)
 	{
-//		CvRect rect = ((CvContour*)contours1[0])->rect;
 		cvRectangle(frame, cvPoint(0, tmp1), cvPoint(320, 240),CV_RGB(0, 0, 255), 2, 8, 0);
-		//printf("red: (%d , %d) (%d , %d)\n", rect.x,rect.y,rect.x + rect.width,rect.y + rect.height);
+
 		blob->Xmin = 0;
 		blob->Xmax = 160; //320/2
 		blob->Ymin = tmp1;
@@ -777,7 +765,7 @@ int VISION_Game_OBS(VisionRange range, VisionRange range1, VisionRange range2, B
 	{
 		CvRect rect = ((CvContour*)contours2[0])->rect;
 		cvRectangle(frame, cvPoint(rect.x, rect.y), cvPoint(rect.x + rect.width, rect.y + rect.height),CV_RGB(0, 180, 0), 2, 8, 0);
-		//printf("red: (%d , %d) (%d , %d)\n", rect.x,rect.y,rect.x + rect.width,rect.y + rect.height);	
+
 		blob1->Xmin = rect.x / 2;
 		blob1->Xmax = (rect.x + rect.width) / 2;
 		blob1->Ymin = rect.y;
@@ -814,7 +802,7 @@ int VISION_Game_BSK(VisionRange range, VisionRange range1, VisionRange range2, B
 	CvPoint *pt;
 	CvScalar data;
 	unsigned char H,S,V;
-	int a=0,b=0,l=0,i,m; //a & b = for loop for height and width, l = for loop for contour, i & m= for compare area
+	int a=0,b=0,l=0,i,m; 
 	int maxX[6]={0},maxY[6]={0};
 	int total=0, avg,total_S=0, avg_S=0,total_V=0, avg_V=0;
 	int cnt1=0,cnt2=0,cnt3=0,cnt4=0;
@@ -825,37 +813,35 @@ int VISION_Game_BSK(VisionRange range, VisionRange range1, VisionRange range2, B
 	int step_ts = imgThreshed->widthStep/sizeof(unsigned char), step_hsv = imgHSV->widthStep/sizeof(unsigned char);
 	int chanels_hsv = imgHSV->nChannels;
 	
-	for(a=0;a<imgHSV->height;a++)// cut window in Y [0, 240]. if not, imgHSV->height read from above is 240
-	for(b=0;b<imgHSV->width;b++)//cut window in X [0, 320] example for(b=30;b<300;b++)
+	for(a=0;a<imgHSV->height;a++)
+	for(b=0;b<imgHSV->width;b++)
 	{
 		H = data_hsv[a*step_hsv+b*chanels_hsv+0];
 		S = data_hsv[a*step_hsv+b*chanels_hsv+1];
 		V = data_hsv[a*step_hsv+b*chanels_hsv+2];
-//		printf("INVERT0=%d\n",Invert[0]);
-//		printf("INVERT1=%d\n",Invert[1]);
-		//printf("i=%d, h1=%d",Invert[0],min[0]);
+
 		if(Invert[0]==0)
 		{
 			if( (H >= min[0] && H <= max[0] && S >= min[1] && S<=max[1] && V>=min[2] && V<=max[2]))
 			{
 				data_ts[a*step_ts+b]=255;
-				//printf("%d\n",data_ts[a*step_ts+b]);
-			}else{
+
+			}
+			else
+			{
 				data_ts[a*step_ts+b]=0;
-				//printf("%d\n",data_ts[a*step_ts+b]);
-				}
+			}
 		}
 		else
 		{
 			if( ((H <= min[0] || H >= max[0]) && S >= min[1] && S<=max[1] && V>=min[2] && V<=max[2]) )
 			{
-				data_ts[a*step_ts+b]=255;
-				//printf("%d\n",data_ts[a*step_ts+b]);
-				
-			}else{
+				data_ts[a*step_ts+b]=255;	
+			}
+			else
+			{
 				data_ts[a*step_ts+b]=0;
-				//printf("%d\n",data_ts[a*step_ts+b]);
-				}
+			}
 		}
 	}
 	
@@ -864,7 +850,7 @@ int VISION_Game_BSK(VisionRange range, VisionRange range1, VisionRange range2, B
 	
 //	if(TuneMode)
 //		cvShowImage("Threshold",imgThreshed);
-	//cvMoveWindow("Threshold",850,350);
+//	cvMoveWindow("Threshold",850,350);
 	
 	cvFindContours(imgThreshed, storage, &contour, sizeof(CvContour), CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, cvPoint(0,0));
 
@@ -878,10 +864,10 @@ int VISION_Game_BSK(VisionRange range, VisionRange range1, VisionRange range2, B
 			continue;
 		}
 		
-		cnt1++;// after threhold , back to trace color cluster. file 0 data read in. if fulfil, then cnt=1 and it is 1st color
-//			printf("cnt1=%d\n",cnt1);
+		cnt1++;
+		
 		for(i = N-1; i >= 0; --i)
-		{//printf("area1=%d,maxArea=%d\n",area1,maxArea1[i]);
+		{
 			if(area1 > maxArea1[i])
 			{
 				maxArea1[i] = area1;
@@ -896,7 +882,7 @@ int VISION_Game_BSK(VisionRange range, VisionRange range1, VisionRange range2, B
 						maxArea1[m+1] = maxArea1[m];
 						contours1[m+1] = contours1[m];
 						maxArea1[m] = tmp_area1;
-						contours1[m] = tmp_cont;//printf("m1=%d\n",m);
+						contours1[m] = tmp_cont;
 					}
 				}
 				break;
@@ -906,36 +892,35 @@ int VISION_Game_BSK(VisionRange range, VisionRange range1, VisionRange range2, B
 	
 	}
 	
-		//For second color,red color folder
-	for(a=0;a<imgHSV->height;a++)// cut window in Y [0, 240]. if not, imgHSV->height read from above is 240
-	for(b=0;b<imgHSV->width;b++)//cut window in X [0, 320] example for(b=30;b<300;b++)
+	//For second color
+	for(a=0;a<imgHSV->height;a++)
+	for(b=0;b<imgHSV->width;b++)
 	{
 		H = data_hsv[a*step_hsv+b*chanels_hsv+0];
 		S = data_hsv[a*step_hsv+b*chanels_hsv+1];
 		V = data_hsv[a*step_hsv+b*chanels_hsv+2];
-		//printf("i=%d, h1=%d",Invert[0],min[0]);
+
 		if(Invert[1]==0)
 		{
 			if( (H >= min1[0] && H <= max1[0] && S >= min1[1] && S<=max1[1] && V>=min1[2] && V<=max1[2]))
 			{
 				data_ts[a*step_ts+b]=255;
-				//printf("%d\n",data_ts[a*step_ts+b]);
-			}else{
+			}
+			else
+			{
 				data_ts[a*step_ts+b]=0;
-				//printf("%d\n",data_ts[a*step_ts+b]);
-				}
+			}
 		}
 		else
 		{
 			if( ((H <= min1[0] || H >= max1[0]) && S >= min1[1] && S<=max1[1] && V>=min1[2] && V<=max1[2]) )
 			{
 				data_ts[a*step_ts+b]=255;
-				//printf("%d\n",data_ts[a*step_ts+b]);
-				
-			}else{
+			}
+			else
+			{
 				data_ts[a*step_ts+b]=0;
-				//printf("%d\n",data_ts[a*step_ts+b]);
-				}
+			}
 		}
 	}
 	
@@ -951,8 +936,8 @@ int VISION_Game_BSK(VisionRange range, VisionRange range1, VisionRange range2, B
 			continue;
 		}
 		
-		cnt2++;// after threhold , back to trace color cluster. file 0 data read in. if fulfil, then cnt=1 and it is 1st color
-//		printf("cnt2=%d\n",cnt2);
+		cnt2++;
+		
 		for(i = N-1; i >= 0; --i)
 		{
 			if(area1 > maxArea2[i])
@@ -969,7 +954,7 @@ int VISION_Game_BSK(VisionRange range, VisionRange range1, VisionRange range2, B
 						maxArea2[m+1] = maxArea2[m];
 						contours2[m+1] = contours2[m];
 						maxArea2[m] = tmp_area1;
-						contours2[m] = tmp_cont;//printf("m2=%d\n",m);
+						contours2[m] = tmp_cont;
 					}
 				}
 				break;
@@ -982,7 +967,7 @@ int VISION_Game_BSK(VisionRange range, VisionRange range1, VisionRange range2, B
 	{
 		CvRect rect = ((CvContour*)contours1[0])->rect;
 		cvRectangle(frame, cvPoint(rect.x, rect.y), cvPoint(rect.x + rect.width, rect.y + rect.height),CV_RGB(0, 0, 255), 2, 8, 0);
-//		printf("red: (%d , %d) (%d , %d)\n", rect.x,rect.y,rect.x + rect.width,rect.y + rect.height);
+
 		blob->Xmin = rect.x / 2;
 		blob->Xmax = (rect.x + rect.width) / 2;
 		blob->Ymin = rect.y;
@@ -1001,7 +986,7 @@ int VISION_Game_BSK(VisionRange range, VisionRange range1, VisionRange range2, B
 	{
 		CvRect rect = ((CvContour*)contours2[0])->rect;
 		cvRectangle(frame, cvPoint(rect.x, rect.y), cvPoint(rect.x + rect.width, rect.y + rect.height),CV_RGB(0, 180, 0), 2, 8, 0);
-		//printf("red: (%d , %d) (%d , %d)\n", rect.x,rect.y,rect.x + rect.width,rect.y + rect.height);	
+
 		blob1->Xmin = rect.x / 2;
 		blob1->Xmax = (rect.x + rect.width) / 2;
 		blob1->Ymin = rect.y;
@@ -1019,7 +1004,6 @@ int VISION_Game_BSK(VisionRange range, VisionRange range1, VisionRange range2, B
 	
 	if(TuneMode)
 	{
-	
 		sprintf(str,"%d",blob->Xmin);
 		sprintf(str1,"%d",blob->Xmax);
 		sprintf(str2,"%d",blob->Ymin);
@@ -1040,12 +1024,10 @@ int VISION_Game_BSK(VisionRange range, VisionRange range1, VisionRange range2, B
 	cvReleaseImage(&imgHSV);
 	cvReleaseImage(&imgThreshed);
 
-
 	return(1);	
-	
 }
 
-int VISION_Game_ArrowDetect(VisionRange range, VisionRange range1, VisionRange range2, BlobCoord *blob,char *gameplay, Color color)//so far, maximum detect 3 colors, return 2 blob coornidate (yellow, blue&Red)
+int VISION_Game_ArrowDetect(VisionRange range, VisionRange range1, VisionRange range2, BlobCoord *blob,char *gameplay, Color color)
 {
 	LoadValueColor(range,range1,range2);
 //	printf("Game Arrow\n");
@@ -1058,7 +1040,7 @@ int VISION_Game_ArrowDetect(VisionRange range, VisionRange range1, VisionRange r
 	CvPoint *pt;
 	CvScalar data;
 	unsigned char H,S,V;
-	int a=0,b=0,l=0,i,m; //a & b = for loop for height and width, l = for loop for contour, i & m= for compare area
+	int a=0,b=0,l=0,i,m; 
 	int maxX[6]={0},maxY[6]={0};
 	int total=0, avg,total_S=0, avg_S=0,total_V=0, avg_V=0;
 	int cnt1=0,cnt2=0,cnt3=0,cnt4=0;
@@ -1073,23 +1055,21 @@ int VISION_Game_ArrowDetect(VisionRange range, VisionRange range1, VisionRange r
 	int step_ts = imgThreshed->widthStep/sizeof(unsigned char), step_hsv = imgHSV->widthStep/sizeof(unsigned char);
 	int chanels_hsv = imgHSV->nChannels;
 	
-	for(a=0;a<imgHSV->height;a++)// cut window in Y [0, 240]. if not, imgHSV->height read from above is 240
-	for(b=0;b<imgHSV->width;b++)//cut window in X [0, 320] example for(b=30;b<300;b++)
+	for(a=0;a<imgHSV->height;a++)
+	for(b=0;b<imgHSV->width;b++)
 	{
 		H = data_hsv[a*step_hsv+b*chanels_hsv+0];
 		S = data_hsv[a*step_hsv+b*chanels_hsv+1];
 		V = data_hsv[a*step_hsv+b*chanels_hsv+2];
-		//printf("i=%d, h1=%d\n",Invert[0],min[0]);
 
 		if((H >= min1[0] && H <= max1[0] && S >= min1[1] && S<=max1[1] && V>=min1[2] && V<=max1[2])
 		|| (H >= min2[0] && H <= max2[0] && S >= min2[1] && S<=max2[1] && V>=min2[2] && V<=max2[2]) )
 		{
 			data_ts[a*step_ts+b]=255;
-			//printf("%d\n",data_ts[a*step_ts+b]);
-		}else
+		}
+		else
 		{
 			data_ts[a*step_ts+b]=0;
-			//printf("%d\n",data_ts[a*step_ts+b]);
 		}
 	}
 		
@@ -1133,10 +1113,10 @@ int VISION_Game_ArrowDetect(VisionRange range, VisionRange range1, VisionRange r
 
 		if((avg>=min1[0])&&(avg<=max1[0])&&(avg_S>=min1[1])&&(avg_S<=max1[1])&&(avg_V>=min1[2])&&(avg_V<=max1[2]))
 		{
-			cnt2++;// after threhold , back to trace color cluster. file 0 data read in. if fulfil, then cnt=1 and it is 1st color
-//			printf("cnt2=%d\n",cnt2);
+			cnt2++;
+			
 			for(i = N-1; i >= 0; --i)
-			{//printf("area1=%d,maxArea=%d\n",area1,maxArea1[i]);
+			{
 				if(area1 > maxArea2[i])
 				{
 					maxArea2[i] = area1;
@@ -1151,7 +1131,7 @@ int VISION_Game_ArrowDetect(VisionRange range, VisionRange range1, VisionRange r
 							maxArea2[m+1] = maxArea2[m];
 							contours2[m+1] = contours2[m];
 							maxArea2[m] = tmp_area1;
-							contours2[m] = tmp_cont;//printf("m1=%d\n",m);
+							contours2[m] = tmp_cont;
 						}
 					}
 					break;
@@ -1161,10 +1141,10 @@ int VISION_Game_ArrowDetect(VisionRange range, VisionRange range1, VisionRange r
 		}
 		else if((avg>=min2[0])&&(avg<=max2[0])&&(avg_S>=min2[1])&&(avg_S<=max2[1])&&(avg_V>=min2[2])&&(avg_V<=max2[2]))
 		{
-			cnt3++;// after threhold , back to trace color cluster. file 0 data read in. if fulfil, then cnt=1 and it is 1st color
-//			printf("cnt3=%d\n",cnt3);
+			cnt3++;
+			
 			for(i = N-1; i >= 0; --i)
-			{//printf("area1=%d,maxArea=%d\n",area1,maxArea1[i]);
+			{
 				if(area1 > maxArea3[i])
 				{
 					maxArea3[i] = area1;
@@ -1179,7 +1159,7 @@ int VISION_Game_ArrowDetect(VisionRange range, VisionRange range1, VisionRange r
 							maxArea3[m+1] = maxArea3[m];
 							contours3[m+1] = contours3[m];
 							maxArea3[m] = tmp_area1;
-							contours3[m] = tmp_cont;//printf("m1=%d\n",m);
+							contours3[m] = tmp_cont;
 						}
 					}
 					break;
@@ -1189,25 +1169,22 @@ int VISION_Game_ArrowDetect(VisionRange range, VisionRange range1, VisionRange r
 		}
 	}
 	
-	for(a=0;a<imgHSV->height;a++)// cut window in Y [0, 240]. if not, imgHSV->height read from above is 240
-	for(b=0;b<imgHSV->width;b++)//cut window in X [0, 320] example for(b=30;b<300;b++)
+	for(a=0;a<imgHSV->height;a++)
+	for(b=0;b<imgHSV->width;b++)
 	{
 		H = data_hsv[a*step_hsv+b*chanels_hsv+0];
 		S = data_hsv[a*step_hsv+b*chanels_hsv+1];
 		V = data_hsv[a*step_hsv+b*chanels_hsv+2];
-//		printf("INVERT0=%d\n",Invert[0]);
-//		printf("INVERT1=%d\n",Invert[1]);
-		//printf("i=%d, h1=%d",Invert[0],min[0]);
+
 		if(Invert[0]==0)
 		{
 			if( (H >= min[0] && H <= max[0] && S >= min[1] && S<=max[1] && V>=min[2] && V<=max[2]))
 			{
 				data_ts[a*step_ts+b]=255;
-				//printf("%d\n",data_ts[a*step_ts+b]);
-			}else
+			}
+			else
 			{
 				data_ts[a*step_ts+b]=0;
-				//printf("%d\n",data_ts[a*step_ts+b]);
 			}
 		}
 		else
@@ -1215,12 +1192,11 @@ int VISION_Game_ArrowDetect(VisionRange range, VisionRange range1, VisionRange r
 			if( ((H <= min[0] || H >= max[0]) && S >= min[1] && S<=max[1] && V>=min[2] && V<=max[2]) )
 			{
 				data_ts[a*step_ts+b]=255;
-				//printf("%d\n",data_ts[a*step_ts+b]);
-				
-			}else{
+			}
+			else
+			{
 				data_ts[a*step_ts+b]=0;
-				//printf("%d\n",data_ts[a*step_ts+b]);
-				}
+			}
 		}
 	}
 	
@@ -1236,10 +1212,10 @@ int VISION_Game_ArrowDetect(VisionRange range, VisionRange range1, VisionRange r
 			continue;
 		}
 		
-		cnt1++;// after threhold , back to trace color cluster. file 0 data read in. if fulfil, then cnt=1 and it is 1st color
-//		printf("cnt1=%d\n",cnt1);
+		cnt1++;
+		
 		for(i = N-1; i >= 0; --i)
-		{//printf("area1=%d,maxArea=%d\n",area1,maxArea1[i]);
+		{
 			if(area1 > maxArea1[i])
 			{
 				maxArea1[i] = area1;
@@ -1254,7 +1230,7 @@ int VISION_Game_ArrowDetect(VisionRange range, VisionRange range1, VisionRange r
 						maxArea1[m+1] = maxArea1[m];
 						contours1[m+1] = contours1[m];
 						maxArea1[m] = tmp_area1;
-						contours1[m] = tmp_cont;//printf("m1=%d\n",m);
+						contours1[m] = tmp_cont;
 					}
 				}
 				break;
@@ -1266,7 +1242,7 @@ int VISION_Game_ArrowDetect(VisionRange range, VisionRange range1, VisionRange r
 	{
 		CvRect rect = ((CvContour*)contours1[0])->rect;
 		cvRectangle(frame, cvPoint(rect.x, rect.y), cvPoint(rect.x + rect.width, rect.y + rect.height),CV_RGB(0, 0, 255), 2, 8, 0);
-		//printf("red: (%d , %d) (%d , %d)\n", rect.x,rect.y,rect.x + rect.width,rect.y + rect.height);
+
 		LnX_min = rect.x / 2;
 		LnX_max = (rect.x + rect.width) / 2;
 		LnY_min = rect.y;
@@ -1286,13 +1262,8 @@ int VISION_Game_ArrowDetect(VisionRange range, VisionRange range1, VisionRange r
 			for(f=0;f<4;f++)
 			{
 				pt1[f]=(CvPoint*)cvGetSeqElem(result,f);
-//				printf("%d %d \n",pt1[f]->x,pt1[f]->y);
 			}
-//			printf("%d %d \n",pt1[0]->x,pt1[0]->y); 
-//			printf("%d %d \n",pt1[1]->x,pt1[1]->y);
-//			printf("%d %d \n",pt1[2]->x,pt1[2]->y);
-//			printf("%d %d \n",pt1[3]->x,pt1[3]->y);
-//			
+			
 			cvLine(frame,*pt1[0],*pt1[1],CV_RGB(0,255,0),2,8,0);
 			cvLine(frame,*pt1[1],*pt1[2],CV_RGB(0,255,0),2,8,0);
 			cvLine(frame,*pt1[2],*pt1[3],CV_RGB(0,255,0),2,8,0);
@@ -1313,15 +1284,7 @@ int VISION_Game_ArrowDetect(VisionRange range, VisionRange range1, VisionRange r
 			pt2[3].y = midY[3]=(pt1[3]->y + pt1[0]->y)/2;
 			
 			cent = 	(pt1[0]->x + pt1[2]->x)/2;
-//			printf("cent=%d",cent);	
-//			printf("mid0= %d %d\n",midX[0],midY[0]);
-//			printf("mid1= %d %d\n",midX[1],midY[1]);
-//			printf("mid2= %d %d\n",midX[2],midY[2]);
-//			printf("mid3= %d %d\n",midX[3],midY[3]);
-//			
-//			unsigned char *data_hsv = (unsigned char *)imgHSV->imageData;  
-//			int step_hsv = imgHSV->widthStep/sizeof(unsigned char) ;  
-//			int chanels_hsv = imgHSV->nChannels;
+
 			int a,b,cnt[4]={0},c=0,tmp1_c=0,tmp2_c=0,cnt_tmp=0,cntwhite=0,tmp3_c,counter[4]={0},d=0,count=0;  
 			unsigned char H,S,V;
 			unsigned char temp[6];
@@ -1394,25 +1357,23 @@ int VISION_Game_ArrowDetect(VisionRange range, VisionRange range1, VisionRange r
 					if(H >= temp[0] && H <= temp[1] && S >= temp[2] && S<= temp[3] && V>=temp[4] && V<=temp[5])
 					{
 						cnt[c]++;
-//						printf("cnt=%d\n",cnt[c]);
-//						if(cnt[c] > 5)	
-//							cvCircle(frame,pt2[c],7,CV_RGB(0,100,60*c),2,8,0);								
+//						printf("cnt=%d\n",cnt[c]);								
 					}			
 				}
 				}   
 				if(cnt[c]>5)
 				{	
 					cntwhite++;						
-					//printf("cntwhite = %d\n",cntwhite);
+//					printf("cntwhite = %d\n",cntwhite);
 					if(cntwhite == 1) tmp1_c = c;
 					if(cntwhite == 2) tmp2_c = c;
 					
-					//printf("tmp1_c = %d \n",tmp1_c);
-					//printf("tmp2_c = %d \n",tmp2_c);
-					//printf("c = %d \n",c);	
+//					printf("tmp1_c = %d \n",tmp1_c);
+//					printf("tmp2_c = %d \n",tmp2_c);
+//					printf("c = %d \n",c);	
 					if(cntwhite ==2)
 					{
-						//printf("pt2[tmp1_c].y = %d, pt2[tmp2_c].y = %d \n",pt2[tmp1_c].y,pt2[tmp2_c].y);
+//						printf("pt2[tmp1_c].y = %d, pt2[tmp2_c].y = %d \n",pt2[tmp1_c].y,pt2[tmp2_c].y);
 						tmp3_c=tmp1_c -tmp2_c;
 						
 						//if(tmp3_c==4) tmp3_c=0;

@@ -2,7 +2,7 @@
 //															//
 //			 VisionSystem for Humanoid Robot				//
 //															//
-//						  V2.5								//
+//						  V2.5a								//
 //															//
 //				    For ODROID U3+							//
 //															//
@@ -19,14 +19,14 @@
 #include <cv.h>
 #include <highgui.h>
 
-int prog_quit = 0;
-int z,colorNo;
-Color color;
-VisionRange Range[3],RangeSD[3],rangeSD,rangeSD1,rangeSD2;
-char key=0,key_Game=0;
-char TuneTest = 0, LOOP=0;
+//b for Marathon, d for Obsticle, k for Basketball, w for Weight and lifting
+#define DEFAULT_GAME 'b'
 
-char FrameGrabDone = 0;
+int prog_quit=0;
+int colorNo;
+
+char key=0,key_Game=0;// pressed key, receive key_Game buffer
+char RX_DONE=0;//rx_buffer received(1) or not received(0)
 char GameName[3][50],Path[50]="",Dir[50]="/mnt/rd/",ExtName[10]=".txt",Filename[50]="";
 char PathSD[50]="",DirSD[50]="/home/odroid/Vision/Data/";
 
@@ -36,7 +36,9 @@ unsigned char Min1[3]= {0};
 unsigned char Max1[3]= {0};
 unsigned char Min2[3]= {0};
 unsigned char Max2[3]= {0};
-unsigned int InvertIni[3]={0};
+
+Color color;
+VisionRange Range[3],RangeSD[3],rangeSD,rangeSD1,rangeSD2;
 
 void *threadUARTRx(void *arg)
 {
@@ -163,8 +165,6 @@ void RunVision_ColorSeg_Struct(VisionRange Range,VisionRange Range1,VisionRange 
 			TX_Char(1,Blob,Blob1);
 			break;
 		}
-
-		FrameGrabDone=0;
 	}
 }
 
@@ -229,7 +229,7 @@ int main(int argc, char **argv)
 	if(key==0 || key=='b' || key=='d' || key=='w' || key=='k' )
 	{
 		if(key==0)
-			key_Game = 'b';
+			key_Game = DEFAULT_GAME;
 		else
 			key_Game = key;
 		
@@ -272,7 +272,7 @@ int main(int argc, char **argv)
 		clock_t begin, end;
 		begin = clock();
 			
-		if( LOOP == 0 )
+		if( RX_DONE == 0 )
 		{
 			if(key == 0 && ( rx_buffer[0] == 'B' || rx_buffer[0] == 'D' || rx_buffer[0] == 'K' || rx_buffer[0] == 'W') )// rx_buffer[0] != '\0'
 			{
@@ -305,7 +305,7 @@ int main(int argc, char **argv)
 					ReadSDWriteRD("ColorB");				
 					break;
 				}
-				LOOP = 1;
+				RX_DONE = 1;
 			}
 		}	
 		

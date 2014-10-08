@@ -2,9 +2,23 @@
 #include <time.h>
 #include "Vision.h"
 
-#define NUMBER_OF_BLOB 3//the number of bounding box
-#define BLOB_SIZE 50
-#define N 1
+#define NUMBER_OF_BLOBS 1 // get 1 biggest blob
+
+#define FRAME_WIDTH 320
+#define FRAME_HEIGHT 240
+
+#define MIN_LINE_SIZE_MARA 100
+#define MAX_LINE_SIZE_MARA 50000
+#define MIN_ARROW_SIZE_MARA 100
+#define MAX_ARROW_SIZE_MARA 20000
+
+#define MIN_BLOB_SIZE_OBS 100
+#define MAX_BLOB_SIZE_OBS 50000
+
+#define MIN_BALL_SIZE_BSK 50
+#define MAX_BALL_SIZE_BSK 20000
+#define MIN_BASKET_SIZE_BSK 50
+#define MAX_BASKET_SIZE_BSK 20000
 
 unsigned char min[3]= {0};
 unsigned char max[3]= {0};
@@ -17,16 +31,17 @@ unsigned int Invert[3]={0};
 unsigned int ArX_min=0,ArX_max=0,ArY_min=0,ArY_max=0;
 
 int colorNo;
-CvMemStorage *storage=0;
-IplImage  *frame;
-CvCapture *capture;
-CvFont font;
+char TuneMode=0;
 
-char TuneMode = 0;
 char str[50]; 
 char str1[50]; 
 char str2[50]; 
 char str3[50]; 
+
+CvMemStorage *storage=0;
+CvCapture *capture;
+CvFont font;
+IplImage *frame;
 
 void LoadValueColor(VisionRange range, VisionRange range1, VisionRange range2)
 {
@@ -65,8 +80,8 @@ int VISION_InitCam()
 	storage = cvCreateMemStorage( 0 );//setup memory buffer, needed by the face detector
 	capture = cvCaptureFromCAM( CV_CAP_ANY );//initialize camera
 
-	cvSetCaptureProperty(capture,CV_CAP_PROP_FRAME_WIDTH,320);
-	cvSetCaptureProperty(capture,CV_CAP_PROP_FRAME_HEIGHT,240);
+	cvSetCaptureProperty(capture,CV_CAP_PROP_FRAME_WIDTH,FRAME_WIDTH);
+	cvSetCaptureProperty(capture,CV_CAP_PROP_FRAME_HEIGHT,FRAME_HEIGHT);
 
 	return(0);
 }
@@ -77,7 +92,7 @@ void VISION_DestoryCam()
 	cvReleaseMemStorage( &storage );
 }
 
-int VISION_GrabFrame() // initialization
+int VISION_GrabFrame() 
 {
 	frame = cvQueryFrame(capture);
 
@@ -92,6 +107,7 @@ int VISION_GrabFrame() // initialization
 int VISION_ShowOriginalFrame()
 {
 	cvShowImage("Original",frame);
+//	cvMoveWindow("Original",830,100);
 	return(1);
 }
 
@@ -113,16 +129,16 @@ int VISION_Tune_Color1(VisionRange range, VisionRange range1, VisionRange range2
 	cvCvtColor(frame, imgHSV, CV_BGR2HSV_FULL);
 	IplImage *imgThreshed=cvCreateImage(cvGetSize(frame),IPL_DEPTH_8U,1);
 	
-	CvSeq *contours[NUMBER_OF_BLOB], *tmp_cont, *contour;
-	CvSeq *contours1[N]={0},*contours2[N]={0},*contours3[N]={0},*contours4[N]={0};
+	CvSeq *tmp_cont, *contour;
+	CvSeq *contours1[NUMBER_OF_BLOBS]={0},*contours2[NUMBER_OF_BLOBS]={0},*contours3[NUMBER_OF_BLOBS]={0},*contours4[NUMBER_OF_BLOBS]={0};
 	CvPoint *pt;
 	CvScalar data;
+	
 	unsigned char H,S,V;
 	int a=0,b=0,l=0,i,m; 
-	int maxX[6]={0},maxY[6]={0};
 	int total=0, avg,total_S=0, avg_S=0,total_V=0, avg_V=0;
 	int cnt1=0,cnt2=0,cnt3=0,cnt4=0;
-	double maxArea1[N]={0},maxArea2[N]={0},maxArea3[N]={0},maxArea4[N]={0};
+	double maxArea1[NUMBER_OF_BLOBS]={0},maxArea2[NUMBER_OF_BLOBS]={0},maxArea3[NUMBER_OF_BLOBS]={0},maxArea4[NUMBER_OF_BLOBS]={0};
 	double area1=0,tmp_area1=0;
 	
 	unsigned char *data_ts = (unsigned char *)imgThreshed->imageData, *data_hsv = (unsigned char *)imgHSV->imageData;
@@ -152,7 +168,6 @@ int VISION_Tune_Color1(VisionRange range, VisionRange range1, VisionRange range2
 			if( (H <= min[0] || H >= max[0]) && S >= min[1] && S<=max[1] && V>=min[2] && V<=max[2])
 			{
 				data_ts[a*step_ts+b]=255;
-				
 			}
 			else
 			{
@@ -165,7 +180,7 @@ int VISION_Tune_Color1(VisionRange range, VisionRange range1, VisionRange range2
 	cvErode(imgThreshed,imgThreshed,NULL,1); 
 	
 	cvShowImage("Threshold",imgThreshed);
-//	cvMoveWindow("Threshold",850,350);
+//	cvMoveWindow("Threshold",830,380);
 	
 	cvFindContours(imgThreshed, storage, &contour, sizeof(CvContour), CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, cvPoint(0,0));
 
@@ -181,7 +196,7 @@ int VISION_Tune_Color1(VisionRange range, VisionRange range1, VisionRange range2
 		
 		cnt1++;
 	
-		for(i = N-1; i >= 0; --i)
+		for(i = NUMBER_OF_BLOBS-1; i >= 0; --i)
 		{
 			if(area1 > maxArea1[i])
 			{
@@ -228,16 +243,16 @@ int VISION_Tune_Color2(VisionRange range, VisionRange range1, VisionRange range2
 	cvCvtColor(frame, imgHSV, CV_BGR2HSV_FULL);
 	IplImage *imgThreshed=cvCreateImage(cvGetSize(frame),IPL_DEPTH_8U,1);
 	
-	CvSeq *contours[NUMBER_OF_BLOB], *tmp_cont, *contour;
-	CvSeq *contours1[N]={0},*contours2[N]={0},*contours3[N]={0},*contours4[N]={0};
+	CvSeq *tmp_cont, *contour;
+	CvSeq *contours1[NUMBER_OF_BLOBS]={0},*contours2[NUMBER_OF_BLOBS]={0},*contours3[NUMBER_OF_BLOBS]={0},*contours4[NUMBER_OF_BLOBS]={0};
 	CvPoint *pt;
 	CvScalar data;
+	
 	unsigned char H,S,V;
 	int a=0,b=0,l=0,i,m; 
-	int maxX[6]={0},maxY[6]={0};
 	int total=0, avg,total_S=0, avg_S=0,total_V=0, avg_V=0;
 	int cnt1=0,cnt2=0,cnt3=0,cnt4=0;
-	double maxArea1[N]={0},maxArea2[N]={0},maxArea3[N]={0},maxArea4[N]={0};
+	double maxArea1[NUMBER_OF_BLOBS]={0},maxArea2[NUMBER_OF_BLOBS]={0},maxArea3[NUMBER_OF_BLOBS]={0},maxArea4[NUMBER_OF_BLOBS]={0};
 	double area1=0,tmp_area1=0;
 	
 	unsigned char *data_ts = (unsigned char *)imgThreshed->imageData, *data_hsv = (unsigned char *)imgHSV->imageData;
@@ -279,7 +294,7 @@ int VISION_Tune_Color2(VisionRange range, VisionRange range1, VisionRange range2
 	cvErode(imgThreshed,imgThreshed,NULL,1);
 	 
 	cvShowImage("Threshold",imgThreshed);
-//	cvMoveWindow("Threshold",850,350);
+//	cvMoveWindow("Threshold",830,380);
 	
 	cvFindContours(imgThreshed, storage, &contour, sizeof(CvContour), CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, cvPoint(0,0));
 
@@ -295,7 +310,7 @@ int VISION_Tune_Color2(VisionRange range, VisionRange range1, VisionRange range2
 
 		cnt2++;
 
-		for(i = N-1; i >= 0; --i)
+		for(i = NUMBER_OF_BLOBS-1; i >= 0; --i)
 		{
 			if(area1 > maxArea2[i])
 			{
@@ -341,16 +356,16 @@ int VISION_Tune_Color3(VisionRange range, VisionRange range1, VisionRange range2
 	cvCvtColor(frame, imgHSV, CV_BGR2HSV_FULL);
 	IplImage *imgThreshed=cvCreateImage(cvGetSize(frame),IPL_DEPTH_8U,1);
 	
-	CvSeq *contours[NUMBER_OF_BLOB], *tmp_cont, *contour;
-	CvSeq *contours1[N]={0},*contours2[N]={0},*contours3[N]={0},*contours4[N]={0};
+	CvSeq *tmp_cont, *contour;
+	CvSeq *contours1[NUMBER_OF_BLOBS]={0},*contours2[NUMBER_OF_BLOBS]={0},*contours3[NUMBER_OF_BLOBS]={0},*contours4[NUMBER_OF_BLOBS]={0};
 	CvPoint *pt;
 	CvScalar data;
+	
 	unsigned char H,S,V;
 	int a=0,b=0,l=0,i,m; 
-	int maxX[6]={0},maxY[6]={0};
 	int total=0, avg,total_S=0, avg_S=0,total_V=0, avg_V=0;
 	int cnt1=0,cnt2=0,cnt3=0,cnt4=0;
-	double maxArea1[N]={0},maxArea2[N]={0},maxArea3[N]={0},maxArea4[N]={0};
+	double maxArea1[NUMBER_OF_BLOBS]={0},maxArea2[NUMBER_OF_BLOBS]={0},maxArea3[NUMBER_OF_BLOBS]={0},maxArea4[NUMBER_OF_BLOBS]={0};
 	double area1=0,tmp_area1=0;
 	
 	unsigned char *data_ts = (unsigned char *)imgThreshed->imageData, *data_hsv = (unsigned char *)imgHSV->imageData;
@@ -392,7 +407,7 @@ int VISION_Tune_Color3(VisionRange range, VisionRange range1, VisionRange range2
 	cvErode(imgThreshed,imgThreshed,NULL,1); 
 	
 	cvShowImage("Threshold",imgThreshed);
-//	cvMoveWindow("Threshold",850,350);
+//	cvMoveWindow("Threshold",830,380);
 	
 	cvFindContours(imgThreshed, storage, &contour, sizeof(CvContour), CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, cvPoint(0,0));
 
@@ -408,7 +423,7 @@ int VISION_Tune_Color3(VisionRange range, VisionRange range1, VisionRange range2
 
 		cnt3++;
 		
-		for(i = N-1; i >= 0; --i)
+		for(i = NUMBER_OF_BLOBS-1; i >= 0; --i)
 		{
 			if(area1 > maxArea3[i])
 			{
@@ -454,16 +469,16 @@ int VISION_Game_1Color(VisionRange range, VisionRange range1, VisionRange range2
 	cvCvtColor(frame, imgHSV, CV_BGR2HSV_FULL);
 	IplImage *imgThreshed=cvCreateImage(cvGetSize(frame),IPL_DEPTH_8U,1);
 	
-	CvSeq *contours[NUMBER_OF_BLOB], *tmp_cont, *contour;
-	CvSeq *contours1[N]={0},*contours2[N]={0},*contours3[N]={0},*contours4[N]={0};
+	CvSeq *tmp_cont, *contour;
+	CvSeq *contours1[NUMBER_OF_BLOBS]={0},*contours2[NUMBER_OF_BLOBS]={0},*contours3[NUMBER_OF_BLOBS]={0},*contours4[NUMBER_OF_BLOBS]={0};
 	CvPoint *pt;
 	CvScalar data;
+	
 	unsigned char H,S,V;
 	int a=0,b=0,l=0,i,m; 
-	int maxX[6]={0},maxY[6]={0};
 	int total=0, avg,total_S=0, avg_S=0,total_V=0, avg_V=0;
 	int cnt1=0,cnt2=0,cnt3=0,cnt4=0;
-	double maxArea1[N]={0},maxArea2[N]={0},maxArea3[N]={0},maxArea4[N]={0};
+	double maxArea1[NUMBER_OF_BLOBS]={0},maxArea2[NUMBER_OF_BLOBS]={0},maxArea3[NUMBER_OF_BLOBS]={0},maxArea4[NUMBER_OF_BLOBS]={0};
 	double area1=0,tmp_area1=0;
 	
 	unsigned char *data_ts = (unsigned char *)imgThreshed->imageData, *data_hsv = (unsigned char *)imgHSV->imageData;
@@ -504,8 +519,10 @@ int VISION_Game_1Color(VisionRange range, VisionRange range1, VisionRange range2
 	cvErode(imgThreshed,imgThreshed,NULL,1); 
 	
 	if(TuneMode)
+	{
 		cvShowImage("Threshold",imgThreshed);
-//	cvMoveWindow("Threshold",850,350);
+//		cvMoveWindow("Threshold",830,380);
+	}
 	
 	cvFindContours(imgThreshed, storage, &contour, sizeof(CvContour), CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, cvPoint(0,0));
 
@@ -521,7 +538,7 @@ int VISION_Game_1Color(VisionRange range, VisionRange range1, VisionRange range2
 		
 		cnt1++;
 		
-		for(i = N-1; i >= 0; --i)
+		for(i = NUMBER_OF_BLOBS-1; i >= 0; --i)
 		{
 			if(area1 > maxArea1[i])
 			{
@@ -549,7 +566,9 @@ int VISION_Game_1Color(VisionRange range, VisionRange range1, VisionRange range2
 	if(cnt1 != 0)
 		{
 			CvRect rect = ((CvContour*)contours1[0])->rect;
-			cvRectangle(frame, cvPoint(rect.x, rect.y), cvPoint(rect.x + rect.width, rect.y + rect.height),CV_RGB(0, 0, 255), 2, 8, 0);
+			
+			if(TuneMode)
+				cvRectangle(frame, cvPoint(rect.x, rect.y), cvPoint(rect.x + rect.width, rect.y + rect.height),CV_RGB(0, 0, 255), 2, 8, 0);
 
 			blob->Xmin = rect.x / 2;
 			blob->Xmax = (rect.x + rect.width) / 2;
@@ -581,16 +600,16 @@ int VISION_Game_OBS(VisionRange range, VisionRange range1, VisionRange range2, B
 	cvCvtColor(frame, imgHSV, CV_BGR2HSV_FULL);
 	IplImage *imgThreshed=cvCreateImage(cvGetSize(frame),IPL_DEPTH_8U,1);
 	
-	CvSeq *contours[NUMBER_OF_BLOB], *tmp_cont, *contour;
-	CvSeq *contours1[N]={0},*contours2[N]={0},*contours3[N]={0},*contours4[N]={0};
+	CvSeq *tmp_cont, *contour;
+	CvSeq *contours1[NUMBER_OF_BLOBS]={0},*contours2[NUMBER_OF_BLOBS]={0},*contours3[NUMBER_OF_BLOBS]={0},*contours4[NUMBER_OF_BLOBS]={0};
 	CvPoint *pt;
 	CvScalar data;
+	
 	unsigned char H,S,V;
 	int a=0,b=0,l=0,i,m,k,tmp,tmp1; 
-	int maxX[6]={0},maxY[6]={0};
 	int total=0, avg,total_S=0, avg_S=0,total_V=0, avg_V=0;
 	int cnt1=0,cnt2=0,cnt3=0,cnt4=0;
-	double maxArea1[N]={0},maxArea2[N]={0},maxArea3[N]={0},maxArea4[N]={0};
+	double maxArea1[NUMBER_OF_BLOBS]={0},maxArea2[NUMBER_OF_BLOBS]={0},maxArea3[NUMBER_OF_BLOBS]={0},maxArea4[NUMBER_OF_BLOBS]={0};
 	double area1=0,tmp_area1=0;
 	
 	unsigned char *data_ts = (unsigned char *)imgThreshed->imageData, *data_hsv = (unsigned char *)imgHSV->imageData;
@@ -625,7 +644,7 @@ int VISION_Game_OBS(VisionRange range, VisionRange range1, VisionRange range2, B
 	{
 		area1=fabs(cvContourArea(contour,CV_WHOLE_SEQ,1 ));
 		
-		if(area1<100 || area1>50000 )
+		if(area1<MIN_BLOB_SIZE_OBS || area1>MAX_BLOB_SIZE_OBS )
 		{
 			cvSeqRemove(contour,0);
 			continue;
@@ -633,7 +652,7 @@ int VISION_Game_OBS(VisionRange range, VisionRange range1, VisionRange range2, B
 
 			cnt1++;
 			
-			for(i = N-1; i >= 0; --i)
+			for(i = NUMBER_OF_BLOBS-1; i >= 0; --i)
 			{
 				if(area1 > maxArea1[i])
 				{
@@ -712,7 +731,7 @@ int VISION_Game_OBS(VisionRange range, VisionRange range1, VisionRange range2, B
 	{
 		area1=fabs(cvContourArea(contour,CV_WHOLE_SEQ,1 ));
 		
-		if(area1<100 || area1>50000 )
+		if(area1<MIN_BLOB_SIZE_OBS || area1>MAX_BLOB_SIZE_OBS )
 		{
 			cvSeqRemove(contour,0);
 			continue;
@@ -720,7 +739,7 @@ int VISION_Game_OBS(VisionRange range, VisionRange range1, VisionRange range2, B
 		
 		cnt2++;
 		
-		for(i = N-1; i >= 0; --i)
+		for(i = NUMBER_OF_BLOBS-1; i >= 0; --i)
 		{
 			if(area1 > maxArea2[i])
 			{
@@ -746,7 +765,8 @@ int VISION_Game_OBS(VisionRange range, VisionRange range1, VisionRange range2, B
 			
 	if(cnt1 != 0)
 	{
-		cvRectangle(frame, cvPoint(0, tmp1), cvPoint(320, 240),CV_RGB(0, 0, 255), 2, 8, 0);
+		if(TuneMode)
+			cvRectangle(frame, cvPoint(0, tmp1), cvPoint(320, 240),CV_RGB(0, 0, 255), 2, 8, 0);
 
 		blob->Xmin = 0;
 		blob->Xmax = 160; //320/2
@@ -764,7 +784,8 @@ int VISION_Game_OBS(VisionRange range, VisionRange range1, VisionRange range2, B
 	if(cnt2 != 0)
 	{
 		CvRect rect = ((CvContour*)contours2[0])->rect;
-		cvRectangle(frame, cvPoint(rect.x, rect.y), cvPoint(rect.x + rect.width, rect.y + rect.height),CV_RGB(0, 180, 0), 2, 8, 0);
+		if(TuneMode)
+			cvRectangle(frame, cvPoint(rect.x, rect.y), cvPoint(rect.x + rect.width, rect.y + rect.height),CV_RGB(0, 180, 0), 2, 8, 0);
 
 		blob1->Xmin = rect.x / 2;
 		blob1->Xmax = (rect.x + rect.width) / 2;
@@ -797,16 +818,16 @@ int VISION_Game_BSK(VisionRange range, VisionRange range1, VisionRange range2, B
 	cvCvtColor(frame, imgHSV, CV_BGR2HSV_FULL);
 	IplImage *imgThreshed=cvCreateImage(cvGetSize(frame),IPL_DEPTH_8U,1);
 	
-	CvSeq *contours[NUMBER_OF_BLOB], *tmp_cont, *contour;
-	CvSeq *contours1[N]={0},*contours2[N]={0},*contours3[N]={0},*contours4[N]={0};
+	CvSeq *tmp_cont, *contour;
+	CvSeq *contours1[NUMBER_OF_BLOBS]={0},*contours2[NUMBER_OF_BLOBS]={0},*contours3[NUMBER_OF_BLOBS]={0},*contours4[NUMBER_OF_BLOBS]={0};
 	CvPoint *pt;
 	CvScalar data;
+	
 	unsigned char H,S,V;
 	int a=0,b=0,l=0,i,m; 
-	int maxX[6]={0},maxY[6]={0};
 	int total=0, avg,total_S=0, avg_S=0,total_V=0, avg_V=0;
 	int cnt1=0,cnt2=0,cnt3=0,cnt4=0;
-	double maxArea1[N]={0},maxArea2[N]={0},maxArea3[N]={0},maxArea4[N]={0};
+	double maxArea1[NUMBER_OF_BLOBS]={0},maxArea2[NUMBER_OF_BLOBS]={0},maxArea3[NUMBER_OF_BLOBS]={0},maxArea4[NUMBER_OF_BLOBS]={0};
 	double area1=0,tmp_area1=0;
 	
 	unsigned char *data_ts = (unsigned char *)imgThreshed->imageData, *data_hsv = (unsigned char *)imgHSV->imageData;
@@ -858,7 +879,7 @@ int VISION_Game_BSK(VisionRange range, VisionRange range1, VisionRange range2, B
 	{
 		area1=fabs(cvContourArea(contour,CV_WHOLE_SEQ,1 ));
 		
-		if(area1<100 || area1>50000 )
+		if(area1<MIN_BALL_SIZE_BSK || area1>MAX_BALL_SIZE_BSK )
 		{
 			cvSeqRemove(contour,0);
 			continue;
@@ -866,7 +887,7 @@ int VISION_Game_BSK(VisionRange range, VisionRange range1, VisionRange range2, B
 		
 		cnt1++;
 		
-		for(i = N-1; i >= 0; --i)
+		for(i = NUMBER_OF_BLOBS-1; i >= 0; --i)
 		{
 			if(area1 > maxArea1[i])
 			{
@@ -930,7 +951,7 @@ int VISION_Game_BSK(VisionRange range, VisionRange range1, VisionRange range2, B
 	{
 		area1=fabs(cvContourArea(contour,CV_WHOLE_SEQ,1 ));
 		
-		if(area1<100 || area1>50000 )
+		if(area1<MIN_BASKET_SIZE_BSK || area1>MAX_BASKET_SIZE_BSK )
 		{
 			cvSeqRemove(contour,0);
 			continue;
@@ -938,7 +959,7 @@ int VISION_Game_BSK(VisionRange range, VisionRange range1, VisionRange range2, B
 		
 		cnt2++;
 		
-		for(i = N-1; i >= 0; --i)
+		for(i = NUMBER_OF_BLOBS-1; i >= 0; --i)
 		{
 			if(area1 > maxArea2[i])
 			{
@@ -966,7 +987,8 @@ int VISION_Game_BSK(VisionRange range, VisionRange range1, VisionRange range2, B
 	if(cnt1 != 0)
 	{
 		CvRect rect = ((CvContour*)contours1[0])->rect;
-		cvRectangle(frame, cvPoint(rect.x, rect.y), cvPoint(rect.x + rect.width, rect.y + rect.height),CV_RGB(0, 0, 255), 2, 8, 0);
+		if(TuneMode)
+			cvRectangle(frame, cvPoint(rect.x, rect.y), cvPoint(rect.x + rect.width, rect.y + rect.height),CV_RGB(0, 0, 255), 2, 8, 0);
 
 		blob->Xmin = rect.x / 2;
 		blob->Xmax = (rect.x + rect.width) / 2;
@@ -985,7 +1007,8 @@ int VISION_Game_BSK(VisionRange range, VisionRange range1, VisionRange range2, B
 	if(cnt2 != 0)
 	{
 		CvRect rect = ((CvContour*)contours2[0])->rect;
-		cvRectangle(frame, cvPoint(rect.x, rect.y), cvPoint(rect.x + rect.width, rect.y + rect.height),CV_RGB(0, 180, 0), 2, 8, 0);
+		if(TuneMode)
+			cvRectangle(frame, cvPoint(rect.x, rect.y), cvPoint(rect.x + rect.width, rect.y + rect.height),CV_RGB(0, 180, 0), 2, 8, 0);
 
 		blob1->Xmin = rect.x / 2;
 		blob1->Xmax = (rect.x + rect.width) / 2;
@@ -1035,16 +1058,16 @@ int VISION_Game_ArrowDetect(VisionRange range, VisionRange range1, VisionRange r
 	cvCvtColor(frame, imgHSV, CV_BGR2HSV_FULL);
 	IplImage *imgThreshed=cvCreateImage(cvGetSize(frame),IPL_DEPTH_8U,1);
 	
-	CvSeq *contours[NUMBER_OF_BLOB], *tmp_cont, *contour;
-	CvSeq *contours1[N]={0},*contours2[N]={0},*contours3[N]={0},*contours4[N]={0};
+	CvSeq *tmp_cont, *contour;
+	CvSeq *contours1[NUMBER_OF_BLOBS]={0},*contours2[NUMBER_OF_BLOBS]={0},*contours3[NUMBER_OF_BLOBS]={0},*contours4[NUMBER_OF_BLOBS]={0};
 	CvPoint *pt;
 	CvScalar data;
+	
 	unsigned char H,S,V;
-	int a=0,b=0,l=0,i,m; 
-	int maxX[6]={0},maxY[6]={0};
+	int a=0,b=0,i,m,l=0; 
 	int total=0, avg,total_S=0, avg_S=0,total_V=0, avg_V=0;
 	int cnt1=0,cnt2=0,cnt3=0,cnt4=0;
-	double maxArea1[N]={0},maxArea2[N]={0},maxArea3[N]={0},maxArea4[N]={0};
+	double maxArea1[NUMBER_OF_BLOBS]={0},maxArea2[NUMBER_OF_BLOBS]={0},maxArea3[NUMBER_OF_BLOBS]={0},maxArea4[NUMBER_OF_BLOBS]={0};
 	double area1=0,tmp_area1=0;
 	int corner_X[4],corner_Y[4],cntcorner1=0,cntcorner2=0,cntcorner3=0,cntcorner4=0,xxxx=0;
 	
@@ -1086,7 +1109,7 @@ int VISION_Game_ArrowDetect(VisionRange range, VisionRange range1, VisionRange r
 	{
 		area1=fabs(cvContourArea(contour,CV_WHOLE_SEQ,1 ));
 		
-		if(area1<100 || area1>50000 )
+		if(area1<MIN_ARROW_SIZE_MARA || area1>MAX_ARROW_SIZE_MARA )
 		{
 			cvSeqRemove(contour,0);
 			continue;
@@ -1115,7 +1138,7 @@ int VISION_Game_ArrowDetect(VisionRange range, VisionRange range1, VisionRange r
 		{
 			cnt2++;
 			
-			for(i = N-1; i >= 0; --i)
+			for(i = NUMBER_OF_BLOBS-1; i >= 0; --i)
 			{
 				if(area1 > maxArea2[i])
 				{
@@ -1143,7 +1166,7 @@ int VISION_Game_ArrowDetect(VisionRange range, VisionRange range1, VisionRange r
 		{
 			cnt3++;
 			
-			for(i = N-1; i >= 0; --i)
+			for(i = NUMBER_OF_BLOBS-1; i >= 0; --i)
 			{
 				if(area1 > maxArea3[i])
 				{
@@ -1206,7 +1229,7 @@ int VISION_Game_ArrowDetect(VisionRange range, VisionRange range1, VisionRange r
 	{
 		area1=fabs(cvContourArea(contour,CV_WHOLE_SEQ,1 ));
 		
-		if(area1<100 || area1>50000 )
+		if(area1<MIN_LINE_SIZE_MARA || area1>MAX_LINE_SIZE_MARA )
 		{
 			cvSeqRemove(contour,0);
 			continue;
@@ -1214,7 +1237,7 @@ int VISION_Game_ArrowDetect(VisionRange range, VisionRange range1, VisionRange r
 		
 		cnt1++;
 		
-		for(i = N-1; i >= 0; --i)
+		for(i = NUMBER_OF_BLOBS-1; i >= 0; --i)
 		{
 			if(area1 > maxArea1[i])
 			{
@@ -1241,7 +1264,8 @@ int VISION_Game_ArrowDetect(VisionRange range, VisionRange range1, VisionRange r
 	if(cnt1 != 0)
 	{
 		CvRect rect = ((CvContour*)contours1[0])->rect;
-		cvRectangle(frame, cvPoint(rect.x, rect.y), cvPoint(rect.x + rect.width, rect.y + rect.height),CV_RGB(0, 0, 255), 2, 8, 0);
+		if(TuneMode)
+			cvRectangle(frame, cvPoint(rect.x, rect.y), cvPoint(rect.x + rect.width, rect.y + rect.height),CV_RGB(0, 0, 255), 2, 8, 0);
 
 		LnX_min = rect.x / 2;
 		LnX_max = (rect.x + rect.width) / 2;

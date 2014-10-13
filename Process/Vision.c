@@ -7,6 +7,39 @@
 #define FRAME_WIDTH 320
 #define FRAME_HEIGHT 240
 
+/////////////CUT WINDOW////////////////
+#define LEFT_FLOOR_OBS 0  //FIRA OBS FLOOR
+#define RIGHT_FLOOR_OBS 320
+#define UP_FLOOR_OBS 0
+#define DOWN_FLOOR_OBS 240
+
+#define LEFT_FOLDER_OBS 0 //FIRA OBS FOLDER
+#define RIGHT_FOLDER_OBS 320
+#define UP_FOLDER_OBS 0
+#define DOWN_FLODER_OBS 240
+
+#define LEFT_ARROW_MARA 0 //FIRA MARA ARROW
+#define RIGHT_ARROW_MARA 320
+#define UP_ARROW_MARA 0
+#define DOWN_ARROW_MARA 240
+
+#define LEFT_LINE_MARA 0 //FIRA MARA LINE
+#define RIGHT_LINE_MARA 320
+#define UP_LINE_MARA 0
+#define DOWN_LINE_MARA 240
+
+#define LEFT_BALL_BSK 100  //FIRA BSK BALL
+#define RIGHT_BALL_BSK 320
+#define UP_BALL_BSK 0
+#define DOWN_BALL_BSK 240
+
+#define LEFT_BASKET_BSK 0 //FIRA BSK BASKET
+#define RIGHT_BASKET_BSK 320
+#define UP_BASKET_BSK 0
+#define DOWN_BASKET_BSK 240
+///////////////////////////////////////
+
+//////////////BLOB SIZE////////////////
 #define MIN_LINE_SIZE_MARA 100
 #define MAX_LINE_SIZE_MARA 50000
 #define MIN_ARROW_SIZE_MARA 100
@@ -19,6 +52,7 @@
 #define MAX_BALL_SIZE_BSK 20000
 #define MIN_BASKET_SIZE_BSK 50
 #define MAX_BASKET_SIZE_BSK 20000
+///////////////////////////////////////
 
 unsigned char min[3]= {0};
 unsigned char max[3]= {0};
@@ -30,7 +64,7 @@ unsigned int Invert[3]={0};
 
 unsigned int ArX_min=0,ArX_max=0,ArY_min=0,ArY_max=0;
 
-int colorNo;
+int colorNo,countS=0,countL=0,countR=0;
 char TuneMode=0;
 
 char str[50]; 
@@ -485,6 +519,8 @@ int VISION_Game_1Color(VisionRange range, VisionRange range1, VisionRange range2
 	int step_ts = imgThreshed->widthStep/sizeof(unsigned char), step_hsv = imgHSV->widthStep/sizeof(unsigned char);
 	int chanels_hsv = imgHSV->nChannels;
 	
+	cvZero(imgThreshed);
+	
 	for(a=0;a<imgHSV->height;a++)
 	for(b=0;b<imgHSV->width;b++)
 	{
@@ -616,8 +652,10 @@ int VISION_Game_OBS(VisionRange range, VisionRange range1, VisionRange range2, B
 	int step_ts = imgThreshed->widthStep/sizeof(unsigned char), step_hsv = imgHSV->widthStep/sizeof(unsigned char);
 	int chanels_hsv = imgHSV->nChannels;
 	
-	for(a=0;a<imgHSV->height;a++)
-	for(b=0;b<imgHSV->width;b++)
+	cvZero(imgThreshed);
+	
+	for(a=UP_FLOOR_OBS;a<DOWN_FLOOR_OBS;a++)
+	for(b=LEFT_FLOOR_OBS;b<RIGHT_FLOOR_OBS;b++)
 	{
 		H = data_hsv[a*step_hsv+b*chanels_hsv+0];
 		S = data_hsv[a*step_hsv+b*chanels_hsv+1];
@@ -626,9 +664,11 @@ int VISION_Game_OBS(VisionRange range, VisionRange range1, VisionRange range2, B
 			if( (H >= min[0] && H <= max[0] && S >= min[1] && S<=max[1] && V>=min[2] && V<=max[2])  )
 			{
 				data_ts[a*step_ts+b]=0;//Floor,black
-			}else{
+			}
+			else
+			{
 				data_ts[a*step_ts+b]=255;//others
-				}		
+			}		
 	}
 	
 //	cvDilate(imgThreshed,imgThreshed,NULL,1);
@@ -691,9 +731,10 @@ int VISION_Game_OBS(VisionRange range, VisionRange range1, VisionRange range2, B
 			
 	}	
 	
+	cvZero(imgThreshed);
 	//For second color,red color folder
-	for(a=0;a<imgHSV->height;a++)
-	for(b=0;b<imgHSV->width;b++)
+	for(a=UP_FOLDER_OBS;a<DOWN_FLODER_OBS;a++)
+	for(b=LEFT_FOLDER_OBS;b<RIGHT_FOLDER_OBS;b++)
 	{
 		H = data_hsv[a*step_hsv+b*chanels_hsv+0];
 		S = data_hsv[a*step_hsv+b*chanels_hsv+1];
@@ -724,6 +765,9 @@ int VISION_Game_OBS(VisionRange range, VisionRange range1, VisionRange range2, B
 			}
 		}
 	}
+	
+//	if(TuneMode)
+//		cvShowImage("Threshold",imgThreshed);
 	
 	cvFindContours(imgThreshed, storage, &contour, sizeof(CvContour), CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, cvPoint(0,0));
 		
@@ -834,8 +878,10 @@ int VISION_Game_BSK(VisionRange range, VisionRange range1, VisionRange range2, B
 	int step_ts = imgThreshed->widthStep/sizeof(unsigned char), step_hsv = imgHSV->widthStep/sizeof(unsigned char);
 	int chanels_hsv = imgHSV->nChannels;
 	
-	for(a=0;a<imgHSV->height;a++)
-	for(b=0;b<imgHSV->width;b++)
+	cvZero(imgThreshed);
+	
+	for(a=UP_BALL_BSK;a<DOWN_BALL_BSK;a++)
+	for(b=LEFT_BALL_BSK;b<RIGHT_BALL_BSK;b++)
 	{
 		H = data_hsv[a*step_hsv+b*chanels_hsv+0];
 		S = data_hsv[a*step_hsv+b*chanels_hsv+1];
@@ -913,9 +959,10 @@ int VISION_Game_BSK(VisionRange range, VisionRange range1, VisionRange range2, B
 	
 	}
 	
+	cvZero(imgThreshed);
 	//For second color
-	for(a=0;a<imgHSV->height;a++)
-	for(b=0;b<imgHSV->width;b++)
+	for(a=UP_BASKET_BSK;a<DOWN_BASKET_BSK;a++)
+	for(b=LEFT_BASKET_BSK;b<RIGHT_BASKET_BSK;b++)
 	{
 		H = data_hsv[a*step_hsv+b*chanels_hsv+0];
 		S = data_hsv[a*step_hsv+b*chanels_hsv+1];
@@ -1078,8 +1125,10 @@ int VISION_Game_ArrowDetect(VisionRange range, VisionRange range1, VisionRange r
 	int step_ts = imgThreshed->widthStep/sizeof(unsigned char), step_hsv = imgHSV->widthStep/sizeof(unsigned char);
 	int chanels_hsv = imgHSV->nChannels;
 	
-	for(a=0;a<imgHSV->height;a++)
-	for(b=0;b<imgHSV->width;b++)
+	cvZero(imgThreshed);
+	
+	for(a=UP_ARROW_MARA;a<DOWN_ARROW_MARA;a++)
+	for(b=LEFT_ARROW_MARA;b<RIGHT_ARROW_MARA;b++)
 	{
 		H = data_hsv[a*step_hsv+b*chanels_hsv+0];
 		S = data_hsv[a*step_hsv+b*chanels_hsv+1];
@@ -1192,8 +1241,10 @@ int VISION_Game_ArrowDetect(VisionRange range, VisionRange range1, VisionRange r
 		}
 	}
 	
-	for(a=0;a<imgHSV->height;a++)
-	for(b=0;b<imgHSV->width;b++)
+	cvZero(imgThreshed);
+	
+	for(a=UP_LINE_MARA;a<DOWN_LINE_MARA;a++)
+	for(b=LEFT_LINE_MARA;b<RIGHT_LINE_MARA;b++)
 	{
 		H = data_hsv[a*step_hsv+b*chanels_hsv+0];
 		S = data_hsv[a*step_hsv+b*chanels_hsv+1];
@@ -1412,23 +1463,36 @@ int VISION_Game_ArrowDetect(VisionRange range, VisionRange range1, VisionRange r
 							if(tmp3_c == 2 || tmp3_c == -2)
 							{
 							printf("Go straight\n");
-							flag = 1;
-							flag1 = 1;
-							ArX_min = 80;
-							ArX_max = 80;
-							ArY_min = 110;
-							ArY_max = 130;
+							countS++;
+							if(countS>countL && countS>countR)
+								{
+								flag = 1;
+								flag1 = 1;
+								ArX_min = 80;
+								ArX_max = 80;
+								ArY_min = 110;
+								ArY_max = 130;
+								countL=0;
+								countR=0;
+								countS=0;
+								}	
 							}
 							else if((tmp3_c == 1 || tmp3_c == 3 || tmp3_c == -1 || tmp3_c == -3)&& pt2[tmp2_c].x > cent)
 							{
 							printf("turn right\n");
-							flag = 1;
-							flag1 = 1;
-							ArX_min = 120;
-							ArX_max = 120;
-							ArY_min = 110;
-							ArY_max = 130;
-					
+							countR++;
+							if(countR>countL && countR>countS)
+								{
+								flag = 1;
+								flag1 = 1;
+								ArX_min = 120;
+								ArX_max = 120;
+								ArY_min = 110;
+								ArY_max = 130;
+								countL=0;
+								countR=0;
+								countS=0;
+								}
 							}
 							
 						}
@@ -1438,24 +1502,36 @@ int VISION_Game_ArrowDetect(VisionRange range, VisionRange range1, VisionRange r
 							if(tmp3_c == 2 || tmp3_c == -2)
 							{
 							printf("Go straight\n");
-							flag = 1;
-							flag1 = 1;
-							ArX_min = 80;
-							ArX_max = 80;
-							ArY_min = 110;
-							ArY_max = 130;
-					
+							countS++;
+							if(countS>countL && countS>countR)
+								{
+								flag = 1;
+								flag1 = 1;
+								ArX_min = 80;
+								ArX_max = 80;
+								ArY_min = 110;
+								ArY_max = 130;
+								countL=0;
+								countR=0;
+								countS=0;
+								}
 							}
 							else if(pt2[tmp1_c].x < cent)
 							{
 							printf("turn left\n");
-							flag = 1;
-							flag1 = 1;
-							ArX_min = 40;
-							ArX_max = 40;
-							ArY_min = 110;
-							ArY_max = 130;
-					
+							countL++;
+							if(countL>countR && countL>countS)
+								{
+								flag = 1;
+								flag1 = 1;
+								ArX_min = 40;
+								ArX_max = 40;
+								ArY_min = 110;
+								ArY_max = 130;
+								countL=0;
+								countR=0;
+								countS=0;
+								}
 							}
 						}
 						if(pt2[tmp2_c].y == pt2[tmp1_c].y) 
@@ -1616,22 +1692,36 @@ int VISION_Game_ArrowDetect(VisionRange range, VisionRange range1, VisionRange r
 							if(tmp3_c == 2 || tmp3_c == -2)
 							{
 							printf("Go straight\n");
-							flag = 1;
-							flag1 = 1;
-							ArX_min = 80;
-							ArX_max = 80;
-							ArY_min = 110;
-							ArY_max = 130;
+							countS++;
+							if(countS>countL && countS>countR)
+								{
+								flag = 1;
+								flag1 = 1;
+								ArX_min = 80;
+								ArX_max = 80;
+								ArY_min = 110;
+								ArY_max = 130;
+								countL=0;
+								countR=0;
+								countS=0;
+								}
 							}
 							else //if((tmp3_c == 1 || tmp3_c == 3 || tmp3_c == -1 || tmp3_c == -3)&& pt2[tmp2_c].x > cent)
 							{
 							printf("turn right\n");
-							flag = 1;
-							flag1 = 1;
-							ArX_min = 120;
-							ArX_max = 120;
-							ArY_min = 110;
-							ArY_max = 130;
+							countR++;
+							if(countR>countL && countR>countS)
+								{
+								flag = 1;
+								flag1 = 1;
+								ArX_min = 120;
+								ArX_max = 120;
+								ArY_min = 110;
+								ArY_max = 130;
+								countL=0;
+								countR=0;
+								countS=0;
+								}
 							}
 							
 						}
@@ -1641,22 +1731,36 @@ int VISION_Game_ArrowDetect(VisionRange range, VisionRange range1, VisionRange r
 							if(tmp3_c == 2 || tmp3_c == -2)
 							{
 							printf("Go straight\n");
-							flag = 1;
-							flag1 = 1;
-							ArX_min = 80;
-							ArX_max = 80;
-							ArY_min = 110;
-							ArY_max = 130;
+							countS++;
+							if(countS>countL && countS>countR)
+								{
+								flag = 1;
+								flag1 = 1;
+								ArX_min = 80;
+								ArX_max = 80;
+								ArY_min = 110;
+								ArY_max = 130;
+								countL=0;
+								countR=0;
+								countS=0;
+								}
 							}
 							else //if(pt2[tmp1_c].x < cent)
 							{
 							printf("turn left\n");
-							flag = 1;
-							flag1 = 1;
-							ArX_min = 40;
-							ArX_max = 40;
-							ArY_min = 110;
-							ArY_max = 130;
+							countL++;
+							if(countL>countR && countL>countS)
+								{
+								flag = 1;
+								flag1 = 1;
+								ArX_min = 40;
+								ArX_max = 40;
+								ArY_min = 110;
+								ArY_max = 130;
+								countL=0;
+								countR=0;
+								countS=0;
+								}
 							}
 						}
 						if(pt2[tmp2_c].y == pt2[tmp1_c].y) 

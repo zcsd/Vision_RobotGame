@@ -1,4 +1,25 @@
 ==========================================================================
+          Vision Code v2.5b for ODROID U3+
+==========================================================================
+>>> Date: 13 OCT 2014
+
+>>> New functionality/features
+
+    * Count most for arrow check
+        
+>>> Changes
+    
+    * Add #define for cut window
+    * Read file one time for game mode
+    * Add cvZero before threshold
+	
+>>> Folder 
+
+    * /home/odroid/Vision/Process
+    * /home/odroid/Vision/Tuner
+    * /home/odroid/Vision/Data
+
+==========================================================================
           Vision Code v2.5a for ODROID U3+
 ==========================================================================
 >>> Date: 8 OCT 2014

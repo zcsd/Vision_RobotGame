@@ -2,7 +2,7 @@
 //															//
 //			 VisionSystem for Humanoid Robot				//
 //															//
-//						  V2.5a								//
+//						  V2.5b								//
 //															//
 //				    For ODROID U3+							//
 //															//
@@ -26,7 +26,7 @@ int prog_quit=0;
 int colorNo;
 
 char key=0,key_Game=0;// pressed key, receive key_Game buffer
-char RX_DONE=0;//rx_buffer received(1) or not received(0)
+char RX_DONE=0, READ_DONE=0;//rx_buffer received(1) or not received(0)
 char GameName[3][50],Path[50]="",Dir[50]="/mnt/rd/",ExtName[10]=".txt",Filename[50]="";
 char PathSD[50]="",DirSD[50]="/home/odroid/Vision/Data/";
 
@@ -100,27 +100,28 @@ void WriteGameRD()
 	fclose(file);
 }
 
-void TX_Char(char x, BlobCoord Blob,BlobCoord Blob1)
+void TX_Char(char object, BlobCoord Blob,BlobCoord Blob1)
 {
-	if( x == 1 || x == 10 || x == 12)//x=1(Mara) or x=10(BSK ball) or x=12(OBS floor)
+	if( object == 1 || object == 10 || object == 12)//object=1(Mara) or object=10(BSK ball) or object=12(OBS floor)
 	{ 
 		UART_TX_Char(13);
-		UART_TX_Char(x);
+		UART_TX_Char(object);
 		UART_TX_Char(Blob.Xmin);
 		UART_TX_Char(Blob.Xmax);
 		UART_TX_Char(Blob.Ymin);
 		UART_TX_Char(Blob.Ymax);
-		printf("\nBlob X: %d %d , Blob Y: %d %d\n", Blob.Xmin, Blob.Xmax, Blob.Ymin, Blob.Ymax);
+		printf("\n%d Blob X: %d %d , Blob Y: %d %d\n",object, Blob.Xmin, Blob.Xmax, Blob.Ymin, Blob.Ymax);
 	}
-	else // x = 11(BSK Basket) or x = 13(OBS red folder)
+	
+	if( object == 11 || object == 13 ) // object = 11(BSK Basket) or object = 13(OBS red folder)
 	{
 		UART_TX_Char(13);
-		UART_TX_Char(x);
+		UART_TX_Char(object);
 		UART_TX_Char(Blob1.Xmin);
 		UART_TX_Char(Blob1.Xmax);
 		UART_TX_Char(Blob1.Ymin);
 		UART_TX_Char(Blob1.Ymax);
-		printf("Blob1 X: %d %d , Blob1 Y: %d %d\n", Blob1.Xmin, Blob1.Xmax, Blob1.Ymin, Blob1.Ymax);
+		printf("%d Blob1 X: %d %d , Blob1 Y: %d %d\n",object, Blob1.Xmin, Blob1.Xmax, Blob1.Ymin, Blob1.Ymax);
 	}		
 }
 
@@ -306,68 +307,74 @@ int main(int argc, char **argv)
 					break;
 				}
 				RX_DONE = 1;
+				READ_DONE = 0;
 			}
 		}	
 		
-		switch (key) //Tuning Mode
+		if(key != 0)
 		{
-			case 'B'://FIRA Mara
-			ReadColor();
-			Readfile("tuning",0);
-			Readfile("tuning",1);
-			Readfile("tuning",2);
-			RunVision_ColorSeg_Struct(Range[0],Range[1],Range[2],&key,color);
-			break;
+			switch (key) //Tuning Mode
+			{
+				case 'B'://FIRA Mara
+				ReadColor();
+				Readfile("tuning",0);
+				Readfile("tuning",1);
+				Readfile("tuning",2);
+				RunVision_ColorSeg_Struct(Range[0],Range[1],Range[2],&key,color);
+				break;
+						
+				case 'D': //FIRA OBS
+				ReadColor();
+				Readfile("tuning",0);
+				Readfile("tuning",1);
+				Readfile("tuning",2);
+				RunVision_ColorSeg_Struct(Range[0],Range[1],Range[2],&key,color);					
+				break;
 					
-			case 'D': //FIRA OBS
-			ReadColor();
-			Readfile("tuning",0);
-			Readfile("tuning",1);
-			Readfile("tuning",2);
-			RunVision_ColorSeg_Struct(Range[0],Range[1],Range[2],&key,color);					
-			break;
-				
-			case 'W': // FIRA WNL
-			ReadColor();
-			Readfile("tuning",0);
-			RunVision_ColorSeg_Struct(Range[0],Range[1],Range[2],&key,color);				
-			break;
-				
-			case 'K':  //FIRA BSK
-			ReadColor();
-			Readfile("tuning",0);
-			Readfile("tuning",1);
-			RunVision_ColorSeg_Struct(Range[0],Range[1],Range[2],&key,color);				
-			break;
-		}	
-				
-		switch (key_Game) //Game Mode
-		{
-			case 'B'://FIRA Mara
-			ReadfileGame("Color",0);
-			ReadfileGame("Color",1);
-			ReadfileGame("Color",2);
-			RunVision_ColorSeg_Struct(Range[0],Range[1],Range[2],&key,color);
-			break;
+				case 'W': // FIRA WNL
+				ReadColor();
+				Readfile("tuning",0);
+				RunVision_ColorSeg_Struct(Range[0],Range[1],Range[2],&key,color);				
+				break;
 					
-			case 'D': //FIRA OBS
-			ReadfileGame("Color",0);
-			ReadfileGame("Color",1);
-			ReadfileGame("Color",2);
-			RunVision_ColorSeg_Struct(Range[0],Range[1],Range[2],&key,color);				
-			break;
-				
-			case 'W': //FIRA WNL
-			ReadfileGame("Color",0);
-			RunVision_ColorSeg_Struct(Range[0],Range[1],Range[2],&key,color);				
-			break;
-				
-			case 'K': //FIRA BSK
-			ReadfileGame("Color",0);
-			ReadfileGame("Color",1);
-			RunVision_ColorSeg_Struct(Range[0],Range[1],Range[2],&key,color);				
-			break;
+				case 'K':  //FIRA BSK
+				ReadColor();
+				Readfile("tuning",0);
+				Readfile("tuning",1);
+				RunVision_ColorSeg_Struct(Range[0],Range[1],Range[2],&key,color);				
+				break;
+			}	
 		}
+		
+		if( ( key==0 || key=='b' || key=='d' || key=='w' || key=='k') && READ_DONE==0)
+		{		
+			switch (key_Game) //Game Mode
+			{
+				case 'B'://FIRA Mara
+				ReadfileGame("Color",0);
+				ReadfileGame("Color",1);
+				ReadfileGame("Color",2);
+				break;
+						
+				case 'D': //FIRA OBS
+				ReadfileGame("Color",0);
+				ReadfileGame("Color",1);
+				ReadfileGame("Color",2);				
+				break;
+					
+				case 'W': //FIRA WNL
+				ReadfileGame("Color",0);				
+				break;
+					
+				case 'K': //FIRA BSK
+				ReadfileGame("Color",0);
+				ReadfileGame("Color",1);			
+				break;
+			}
+			READ_DONE=1;
+		}
+		
+		RunVision_ColorSeg_Struct(Range[0],Range[1],Range[2],&key,color);
 		
 		end = clock();
 		time_spent = (double)(end - begin) / CLOCKS_PER_SEC;

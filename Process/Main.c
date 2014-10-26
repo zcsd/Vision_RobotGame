@@ -2,7 +2,7 @@
 //															//
 //			 VisionSystem for Humanoid Robot				//
 //															//
-//						  V2.5b								//
+//						  V2.5c								//
 //															//
 //				    For ODROID U3+							//
 //															//

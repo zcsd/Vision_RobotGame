@@ -1,4 +1,25 @@
 ==========================================================================
+          Vision Code v2.5c for ODROID U3+
+==========================================================================
+>>> Date: 26 OCT 2014
+
+>>> New functionality/features
+
+    * New arrow detection
+        
+>>> Changes
+    
+    * Show more threshold image
+    * voting fo turing left, right and straight(Mara)
+    * Add Basket text showing
+	
+>>> Folder 
+
+    * /home/odroid/Vision/Process
+    * /home/odroid/Vision/Tuner
+    * /home/odroid/Vision/Data
+    
+==========================================================================
           Vision Code v2.5b for ODROID U3+
 ==========================================================================
 >>> Date: 13 OCT 2014

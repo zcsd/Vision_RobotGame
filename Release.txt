@@ -1,4 +1,24 @@
 ==========================================================================
+          Vision Code v2.5d for ODROID U3+
+==========================================================================
+>>> Date: 30 OCT 2014
+
+>>> New functionality/features
+
+    * Find Poly and Rotate image to detect arrow (command)
+    * Find MinArea rectangular and Rotate image to detect arrow
+        
+>>> Changes
+    
+    * add define for arrow detect
+	
+>>> Folder 
+
+    * /home/odroid/Vision/Process
+    * /home/odroid/Vision/Tuner
+    * /home/odroid/Vision/Data
+
+==========================================================================
           Vision Code v2.5c for ODROID U3+
 ==========================================================================
 >>> Date: 26 OCT 2014

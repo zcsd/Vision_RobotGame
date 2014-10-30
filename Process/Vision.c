@@ -56,6 +56,25 @@
 #define MAX_BASKET_SIZE_BSK 20000
 ///////////////////////////////////////
 
+////////////FIRA MARA/////////////////
+#define ARROW_MIN_X 10 //Process arrow when
+#define ARROW_MAX_X 310
+#define ARROW_MIN_Y 100 //Important*****100
+#define ARROW_MAX_Y 220 //Important****
+
+#define ARROW_LEFT_MIN_RATIO 0.1 //Process arrow ratio
+#define ARROW_LEFT_MAX_RATIO 0.3
+#define ARROW_RIGHT_MIN_RATIO 0.7
+#define ARROW_RIGHT_MAX_RATIO 0.9
+#define ARROW_UP_RATIO 0.3
+#define ARROW_DOWN_RATIO 0.7
+
+#define DIFFERENCE_LR_MAX 20 //pixel differences between left and right 
+#define DIFFERENCE_LR_MIN 10 // check go straight 
+
+#define LINE_MINY_SEND 180 // if Line upper point smaller than 180, send line; greater than 180, send arrow
+//////////////////////////////////////
+
 unsigned char min[3]= {0};
 unsigned char max[3]= {0};
 unsigned char min1[3]= {0};
@@ -66,7 +85,7 @@ unsigned int Invert[3]={0};
 
 unsigned int ArX_min=0,ArX_max=0,ArY_min=0,ArY_max=0;
 
-int colorNo,countS,countL,countR;
+int colorNo,countS,countL,countR,COUNT_RESET;
 char TuneMode=0;
 
 char str[50]; 
@@ -164,6 +183,18 @@ void VISION_DisableTuneMode()
 {
 	TuneMode = 0;
 }
+
+IplImage* RotateImage(IplImage* frame,IplImage* imgRotate,double degree,int rect_center_x,int rect_center_y)  
+{   
+    CvPoint2D32f center;    
+    center.x=rect_center_x;  //img->width/2.0+0.5
+    center.y=rect_center_y; // img->height/2.0+0.5
+    float m[6];              
+    CvMat M = cvMat( 2, 3, CV_32F, m );  
+    cv2DRotationMatrix( center, degree,1, &M);  
+    cvWarpAffine(frame,imgRotate, &M,CV_INTER_LINEAR+CV_WARP_FILL_OUTLIERS,cvScalarAll(0) ); 
+    return imgRotate;   
+} 
 	
 int VISION_Tune_Color1(VisionRange range, VisionRange range1, VisionRange range2, BlobCoord *blob,char *gameplay, Color color)
 {
@@ -1146,6 +1177,1003 @@ int VISION_Game_BSK(VisionRange range, VisionRange range1, VisionRange range2, B
 	return(1);	
 }
 
+//Find minareaRect, Rotate and compare left right
+int VISION_Game_ArrowDetect(VisionRange range, VisionRange range1, VisionRange range2, BlobCoord *blob,char *gameplay, Color color)
+{
+	LoadValueColor(range,range1,range2);
+//	printf("Game Arrow\n");
+	IplImage *imgHSV=cvCreateImage(cvGetSize(frame),IPL_DEPTH_8U,3);
+	IplImage *imgRotate=cvCreateImage(cvGetSize(frame),IPL_DEPTH_8U,3);
+	IplImage *imgRotate_HSV=cvCreateImage(cvGetSize(frame),IPL_DEPTH_8U,3);
+	IplImage *imgThreshed=cvCreateImage(cvGetSize(frame),IPL_DEPTH_8U,1);
+	IplImage *imgThreshed1=cvCreateImage(cvGetSize(frame),IPL_DEPTH_8U,1);
+	
+	cvCvtColor(frame, imgHSV, CV_BGR2HSV_FULL);
+	
+	CvSeq *tmp_cont, *contour;
+	CvSeq *contours1[NUMBER_OF_BLOBS]={0},*contours2[NUMBER_OF_BLOBS]={0},*contours3[NUMBER_OF_BLOBS]={0},*contours4[NUMBER_OF_BLOBS]={0};
+	CvPoint *pt;
+	CvScalar data;
+	
+	unsigned char H,S,V;
+	int a=0,b=0,i,m,l=0; 
+	int total=0, avg,total_S=0, avg_S=0,total_V=0, avg_V=0;
+	int cnt1=0,cnt2=0,cnt3=0,cnt4=0;
+	double maxArea1[NUMBER_OF_BLOBS]={0},maxArea2[NUMBER_OF_BLOBS]={0},maxArea3[NUMBER_OF_BLOBS]={0},maxArea4[NUMBER_OF_BLOBS]={0};
+	double area1=0,tmp_area1=0;
+	int corner_X[4],corner_Y[4],cntcorner1=0,cntcorner2=0,cntcorner3=0,cntcorner4=0,xxxx=0;
+	
+	int LnX_min=0,LnX_max=0,LnY_min=0,LnY_max=0;
+	int flag=0,flag1;
+	
+	unsigned char *data_ts = (unsigned char *)imgThreshed->imageData, *data_hsv = (unsigned char *)imgHSV->imageData;
+	int step_ts = imgThreshed->widthStep/sizeof(unsigned char), step_hsv = imgHSV->widthStep/sizeof(unsigned char);
+	int chanels_hsv = imgHSV->nChannels;
+	
+	unsigned char *data_hsv1 = (unsigned char *)imgRotate_HSV->imageData;
+	int step_hsv1 = imgRotate_HSV->widthStep/sizeof(unsigned char);
+	int chanels_hsv1 = imgRotate_HSV->nChannels;
+	
+	cvZero(imgThreshed);
+	cvZero(imgThreshed1);
+	
+	for(a=UP_ARROW_MARA;a<DOWN_ARROW_MARA;a++)
+	for(b=LEFT_ARROW_MARA;b<RIGHT_ARROW_MARA;b++)
+	{
+		H = data_hsv[a*step_hsv+b*chanels_hsv+0];
+		S = data_hsv[a*step_hsv+b*chanels_hsv+1];
+		V = data_hsv[a*step_hsv+b*chanels_hsv+2];
+
+		if((H >= min1[0] && H <= max1[0] && S >= min1[1] && S<=max1[1] && V>=min1[2] && V<=max1[2])
+		|| (H >= min2[0] && H <= max2[0] && S >= min2[1] && S<=max2[1] && V>=min2[2] && V<=max2[2]) )
+		{
+			data_ts[a*step_ts+b]=255;
+		}
+		else
+		{
+			data_ts[a*step_ts+b]=0;
+		}
+	}
+	
+	cvDilate(imgThreshed,imgThreshed,NULL,1);
+	cvErode(imgThreshed,imgThreshed,NULL,1); 
+	
+	cvAdd(imgThreshed1,imgThreshed,imgThreshed1,0);
+	
+	if(TuneMode)
+		cvShowImage("Arrow",imgThreshed1);
+//	cvMoveWindow("Threshold",500,350);
+	
+	cvFindContours(imgThreshed, storage, &contour, sizeof(CvContour), CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, cvPoint(0,0));
+    
+	for(;contour;contour = contour->h_next)
+	{
+		area1=fabs(cvContourArea(contour,CV_WHOLE_SEQ,1 ));
+		
+		if(area1<MIN_ARROW_SIZE_MARA || area1>MAX_ARROW_SIZE_MARA )
+		{
+			cvSeqRemove(contour,0);
+			continue;
+		}
+	
+			cnt2++;
+			
+			for(i = NUMBER_OF_BLOBS-1; i >= 0; --i)
+			{
+				if(area1 > maxArea2[i])
+				{
+					maxArea2[i] = area1;
+					contours2[i] = contour;
+					
+					for(m = (i-1); m >= 0; --m)
+					{
+						if(maxArea2[m] < maxArea2[m+1])
+						{
+							tmp_area1 = maxArea2[m+1];
+							tmp_cont = contours2[m+1];
+							maxArea2[m+1] = maxArea2[m];
+							contours2[m+1] = contours2[m];
+							maxArea2[m] = tmp_area1;
+							contours2[m] = tmp_cont;
+						}
+					}
+					break;
+				}
+			}
+	}
+	
+	cvZero(imgThreshed);
+	
+	for(a=UP_LINE_MARA;a<DOWN_LINE_MARA;a++)
+	for(b=LEFT_LINE_MARA;b<RIGHT_LINE_MARA;b++)
+	{
+		H = data_hsv[a*step_hsv+b*chanels_hsv+0];
+		S = data_hsv[a*step_hsv+b*chanels_hsv+1];
+		V = data_hsv[a*step_hsv+b*chanels_hsv+2];
+
+		if(Invert[0]==0)
+		{
+			if( (H >= min[0] && H <= max[0] && S >= min[1] && S<=max[1] && V>=min[2] && V<=max[2]))
+			{
+				data_ts[a*step_ts+b]=255;
+			}
+			else
+			{
+				data_ts[a*step_ts+b]=0;
+			}
+		}
+		else
+		{
+			if( ((H <= min[0] || H >= max[0]) && S >= min[1] && S<=max[1] && V>=min[2] && V<=max[2]) )
+			{
+				data_ts[a*step_ts+b]=255;
+			}
+			else
+			{
+				data_ts[a*step_ts+b]=0;
+			}
+		}
+	}
+	
+	if(TuneMode)
+		cvShowImage("Line",imgThreshed);
+		
+	cvFindContours(imgThreshed, storage, &contour, sizeof(CvContour), CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, cvPoint(0,0));
+
+	for(;contour;contour = contour->h_next)
+	{
+		area1=fabs(cvContourArea(contour,CV_WHOLE_SEQ,1 ));
+		
+		if(area1<MIN_LINE_SIZE_MARA || area1>MAX_LINE_SIZE_MARA )
+		{
+			cvSeqRemove(contour,0);
+			continue;
+		}
+		
+		cnt1++;
+		
+		for(i = NUMBER_OF_BLOBS-1; i >= 0; --i)
+		{
+			if(area1 > maxArea1[i])
+			{
+				maxArea1[i] = area1;
+				contours1[i] = contour;
+				
+				for(m = (i-1); m >= 0; --m)
+				{
+					if(maxArea1[m] < maxArea1[m+1])
+					{
+						tmp_area1 = maxArea1[m+1];
+						tmp_cont = contours1[m+1];
+						maxArea1[m+1] = maxArea1[m];
+						contours1[m+1] = contours1[m];
+						maxArea1[m] = tmp_area1;
+						contours1[m] = tmp_cont;
+					}
+				}
+				break;
+			}
+		}	
+	}
+	
+	if(cnt1 != 0)
+	{
+		CvRect rect = ((CvContour*)contours1[0])->rect;
+		if(TuneMode)
+			cvRectangle(frame, cvPoint(rect.x, rect.y), cvPoint(rect.x + rect.width, rect.y + rect.height),CV_RGB(0, 0, 255), 2, 8, 0);
+
+		LnX_min = rect.x / 2;
+		LnX_max = (rect.x + rect.width) / 2;
+		LnY_min = rect.y;
+		LnY_max = rect.y + rect.height;
+	}
+
+	int COUNT_LEFT=0,COUNT_RIGHT=0,Difference_LR;
+	CvSeq* result;
+	int f,rect_center_x,rect_center_y;
+	double tangent,degree;
+	int rect_width,rect_height,rect_temp1,rect_temp2,rect_rotate_x,rect_rotate_y;
+	float WD2HG;
+	int rect_max_x,rect_max_y;
+	
+	if(cnt2==0 && cnt1!=0)//if only see line,reset to 0
+	{	
+		countL=0;
+		countR=0;
+		countS=0;
+	}
+	
+/*	if(COUNT_RESET==0 && cnt1!=0)//if only see line,reset to 0
+	{
+		countL=0;
+		countR=0;
+		countS=0;
+	}
+*/	
+//	COUNT_RESET=0;	
+	if(cnt2 != 0 && cnt1 !=0)//  see line and arrow at the same time
+	{
+		CvBox2D rect=cvMinAreaRect2(contours2[0],storage);
+		CvPoint2D32f rect_pts0[4];
+		cvBoxPoints(rect,rect_pts0);
+		int npts=4;
+		CvPoint rect_pts[4],*pt1=rect_pts;
+		
+		for(a=0;a<4;a++)
+		{
+			rect_pts[a]=cvPointFrom32f(rect_pts0[a]);
+		}	
+		
+		cvPolyLine(frame,&pt1,&npts,1,1,CV_RGB(255,255,255),2,8,0);
+
+		CvPoint pt2[2];		
+
+		rect_center_x = (pt1[0].x + pt1[2].x)/2;
+		rect_center_y = (pt1[0].y + pt1[2].y)/2;
+		
+		rect_temp1=sqrt((pt1[0].y-pt1[1].y)*(pt1[0].y-pt1[1].y)+(pt1[0].x-pt1[1].x)*(pt1[0].x-pt1[1].x));
+		rect_temp2=sqrt((pt1[1].y-pt1[2].y)*(pt1[1].y-pt1[2].y)+(pt1[1].x-pt1[2].x)*(pt1[1].x-pt1[2].x));
+		
+		if(rect_temp1>=rect_temp2)
+		{
+			rect_width = rect_temp1;
+			rect_height = rect_temp2;
+		}
+		else
+		{
+			rect_width = rect_temp2;
+			rect_height = rect_temp1;	
+		}
+		
+//		printf("Rect width = %d, Rect height = %d\n",rect_width,rect_height);
+		
+		rect_rotate_x = rect_center_x - rect_width/2;
+		rect_rotate_y = rect_center_y - rect_height/2;
+		WD2HG = rect_width / rect_height;
+		rect_max_x = rect_rotate_x + rect_width;
+		rect_max_y = rect_rotate_y + rect_height;
+		
+//		printf("new x,y is (%d, %d)\n",rect_rotate_x,rect_rotate_y);
+		if(WD2HG>0.4 && WD2HG<1.8 && rect_rotate_x>ARROW_MIN_X && rect_rotate_y>ARROW_MIN_Y && rect_max_x<ARROW_MAX_X && rect_max_y<ARROW_MAX_Y)
+		{
+			if(pt1[0].y >= pt1[1].y && pt1[0].y >= pt1[2].y && pt1[0].y >= pt1[3].y)
+			{
+				pt2[0].x=pt1[0].x;
+				pt2[0].y=pt1[0].y;
+				if(pt1[1].y >= pt1[3].y)
+				{
+					pt2[1].x=pt1[1].x;
+					pt2[1].y=pt1[1].y;
+				}
+				else
+				{
+					pt2[1].x=pt1[3].x;
+					pt2[1].y=pt1[3].y;
+				}		
+			}
+			
+			if(pt1[1].y >= pt1[0].y && pt1[1].y >= pt1[2].y && pt1[1].y >= pt1[3].y)
+			{
+				pt2[0].x=pt1[1].x;
+				pt2[0].y=pt1[1].y;
+				if(pt1[0].y >= pt1[2].y)
+				{
+					pt2[1].x=pt1[0].x;
+					pt2[1].y=pt1[0].y;
+				}
+				else
+				{
+					pt2[1].x=pt1[2].x;
+					pt2[1].y=pt1[2].y;
+				}
+				
+			}
+			
+			if(pt1[2].y >= pt1[0].y && pt1[2].y >= pt1[1].y && pt1[2].y >= pt1[3].y)
+			{
+				pt2[0].x=pt1[2].x;
+				pt2[0].y=pt1[2].y;
+				if(pt1[1].y >= pt1[3].y)
+				{
+					pt2[1].x=pt1[1].x;
+					pt2[1].y=pt1[1].y;
+				}
+				else
+				{
+					pt2[1].x=pt1[3].x;
+					pt2[1].y=pt1[3].y;
+				}
+			}
+			
+			if(pt1[3].y >= pt1[0].y && pt1[3].y >= pt1[1].y && pt1[3].y >= pt1[2].y)
+			{
+				pt2[0].x=pt1[3].x;
+				pt2[0].y=pt1[3].y;
+				if(pt1[0].y >= pt1[2].y)
+				{
+					pt2[1].x=pt1[0].x;
+					pt2[1].y=pt1[0].y;
+				}
+				else
+				{
+					pt2[1].x=pt1[2].x;
+					pt2[1].y=pt1[2].y;
+				}
+			}
+			
+			tangent= ((pt2[0].y-pt2[1].y)*0.01)/((pt2[0].x-pt2[1].x)*0.01);
+//			printf("Tangent is %f\n", tangent);	
+//			cvCircle(frame,pt2[0],7,CV_RGB(0,0,255),2,8,0);
+//			cvCircle(frame,pt2[1],7,CV_RGB(0,255,0),2,8,0);
+			degree=tangent*180/3.1415926;
+//			printf("degree is %0.2f\n",degree);
+			
+			imgRotate = RotateImage(frame,imgRotate, degree,rect_center_x,rect_center_y);		
+			
+			cvLine(imgRotate,cvPoint(rect_rotate_x+rect_width*ARROW_LEFT_MIN_RATIO, rect_rotate_y+rect_height*ARROW_UP_RATIO),cvPoint(rect_rotate_x+rect_width*ARROW_LEFT_MIN_RATIO, rect_rotate_y+rect_height*ARROW_DOWN_RATIO),CV_RGB(0,255,0),2,8,0);
+			cvLine(imgRotate,cvPoint(rect_rotate_x+rect_width*ARROW_LEFT_MAX_RATIO, rect_rotate_y+rect_height*ARROW_UP_RATIO),cvPoint(rect_rotate_x+rect_width*ARROW_LEFT_MAX_RATIO, rect_rotate_y+rect_height*ARROW_DOWN_RATIO),CV_RGB(0,255,0),2,8,0);
+			cvLine(imgRotate,cvPoint(rect_rotate_x+rect_width*ARROW_RIGHT_MIN_RATIO, rect_rotate_y+rect_height*ARROW_UP_RATIO),cvPoint(rect_rotate_x+rect_width*ARROW_RIGHT_MIN_RATIO, rect_rotate_y+rect_height*ARROW_DOWN_RATIO),CV_RGB(0,255,0),2,8,0);
+			cvLine(imgRotate,cvPoint(rect_rotate_x+rect_width*ARROW_RIGHT_MAX_RATIO, rect_rotate_y+rect_height*ARROW_UP_RATIO),cvPoint(rect_rotate_x+rect_width*ARROW_RIGHT_MAX_RATIO, rect_rotate_y+rect_height*ARROW_DOWN_RATIO),CV_RGB(0,255,0),2,8,0);
+			
+			cvCvtColor(imgRotate, imgRotate_HSV, CV_BGR2HSV_FULL);
+			
+			for(a=rect_rotate_y+rect_height*ARROW_UP_RATIO;a<rect_rotate_y+rect_height*ARROW_DOWN_RATIO;a++)
+			for(b=rect_rotate_x+rect_width*ARROW_LEFT_MIN_RATIO;b<rect_rotate_x+rect_width*ARROW_LEFT_MAX_RATIO;b++)
+			{
+				H = data_hsv1[a*step_hsv1+b*chanels_hsv1+0];
+				S = data_hsv1[a*step_hsv1+b*chanels_hsv1+1];
+				V = data_hsv1[a*step_hsv1+b*chanels_hsv1+2];
+
+				if( (H >= min2[0] && H <= max2[0] && S >= min2[1] && S<=max2[1] && V>=min2[2] && V<=max2[2]))
+				{
+					COUNT_LEFT = COUNT_LEFT + 1;
+				}
+			}
+			
+			for(a=rect_rotate_y+rect_height*ARROW_UP_RATIO;a<rect_rotate_y+rect_height*ARROW_DOWN_RATIO;a++)
+			for(b=rect_rotate_x+rect_width*ARROW_RIGHT_MIN_RATIO;b<rect_rotate_x+rect_width*ARROW_RIGHT_MAX_RATIO;b++)
+			{
+				H = data_hsv1[a*step_hsv1+b*chanels_hsv1+0];
+				S = data_hsv1[a*step_hsv1+b*chanels_hsv1+1];
+				V = data_hsv1[a*step_hsv1+b*chanels_hsv1+2];
+
+				if( (H >= min2[0] && H <= max2[0] && S >= min2[1] && S<=max2[1] && V>=min2[2] && V<=max2[2]))
+				{
+					COUNT_RIGHT = COUNT_RIGHT + 1;
+				}
+			}
+			
+			Difference_LR= COUNT_LEFT - COUNT_RIGHT;
+			if(Difference_LR < 0)
+				Difference_LR = (-1)*Difference_LR;
+				
+			if(COUNT_LEFT > COUNT_RIGHT && Difference_LR > DIFFERENCE_LR_MAX)
+			{
+//				printf("Turn Left\n");
+				countL=countL+1;
+			}
+			else
+			if(COUNT_RIGHT > COUNT_LEFT && Difference_LR > DIFFERENCE_LR_MAX)
+			{
+//				printf("Turn Right\n");
+				countR=countR+1;
+			}
+			else
+			if(Difference_LR < DIFFERENCE_LR_MIN)
+			{
+//				printf("Go Straight\n");
+				countS=countS+1;
+			}
+//			COUNT_RESET=1;
+		}	
+		
+		if(countL>countR && countL>countS)
+		{
+			cvCircle(frame,cvPoint(40,120),7,CV_RGB(255,0,0),3,8,0);
+//				printf("Turn Left\n");
+			flag = 1;
+			flag1 = 1;
+			ArX_min = 40;
+			ArX_max = 40;
+			ArY_min = 110;
+			ArY_max = 130;
+		}
+		
+		if(countR>countL && countR>countS)
+		{   
+			cvCircle(frame,cvPoint(280,120),7,CV_RGB(255,0,0),3,8,0);
+//				printf("Turn Right\n");
+			flag = 1;
+			flag1 = 1;
+			ArX_min = 120;
+			ArX_max = 120;
+			ArY_min = 110;
+			ArY_max = 130;		
+		}
+		
+		if(countS>countL && countS>countR)
+		{	
+			cvCircle(frame,cvPoint(160,20),7,CV_RGB(255,0,0),3,8,0);
+//				printf("Go Straight\n");
+			flag = 1;
+			flag1 = 1;
+			ArX_min = 80;
+			ArX_max = 80;
+			ArY_min = 110;
+			ArY_max = 130;		
+		}	
+	}
+	
+	if(TuneMode)
+		cvShowImage("Rotate",imgRotate);	
+	
+	if(cnt1 != 0)//have Line
+	{
+		if(flag==0)// no arrow
+		{
+			blob->Xmin = LnX_min;
+			blob->Xmax = LnX_max;
+			blob->Ymin = LnY_min;
+			blob->Ymax = LnY_max;
+			ArX_min=255;
+			ArX_max=255;
+			ArY_min=255;
+			ArY_max=255;	
+		}
+		else  //have arrow
+		{
+			if(LnY_min < 180) //upper point smaller than 200, send Line
+			{
+				blob->Xmin = LnX_min;
+				blob->Xmax = LnX_max;
+				blob->Ymin = LnY_min;
+				blob->Ymax = LnY_max;	
+			}
+			else// upper point greater than 200, send Arrow
+			{
+				blob->Xmin = ArX_min;
+				blob->Xmax = ArX_max;
+				blob->Ymin = ArY_min;
+				blob->Ymax = ArY_max;	
+			}
+		}
+	}
+	else  //no line
+	{
+		if(flag == 0)//No arrow
+		{
+				blob->Xmin = ArX_min;
+				blob->Xmax = ArX_max;
+				blob->Ymin = ArY_min;
+				blob->Ymax = ArY_max;				
+		}
+		else  //have arrow
+		{
+			blob->Xmin = ArX_min;
+			blob->Xmax = ArX_max;
+			blob->Ymin = ArY_min;
+			blob->Ymax = ArY_max;	
+		}		
+	}
+	
+	printf("Left:%d, Right:%d,Straight:%d\n",countL,countR,countS);
+	flag = 0;
+	
+	if(TuneMode)
+		VISION_ShowOriginalFrame();
+	
+	cvReleaseImage(&imgHSV);
+	cvReleaseImage(&imgRotate);
+	cvReleaseImage(&imgRotate_HSV);
+	cvReleaseImage(&imgThreshed);
+	cvReleaseImage(&imgThreshed1);
+
+	return(1);
+}
+/*
+//Find poly, Rotate and compare left right
+int VISION_Game_ArrowDetect(VisionRange range, VisionRange range1, VisionRange range2, BlobCoord *blob,char *gameplay, Color color)
+{
+	LoadValueColor(range,range1,range2);
+//	printf("Game Arrow\n");
+	IplImage *imgHSV=cvCreateImage(cvGetSize(frame),IPL_DEPTH_8U,3);
+	IplImage *imgRotate=cvCreateImage(cvGetSize(frame),IPL_DEPTH_8U,3);
+	IplImage *imgRotate_HSV=cvCreateImage(cvGetSize(frame),IPL_DEPTH_8U,3);
+	IplImage *imgThreshed=cvCreateImage(cvGetSize(frame),IPL_DEPTH_8U,1);
+	IplImage *imgThreshed1=cvCreateImage(cvGetSize(frame),IPL_DEPTH_8U,1);
+	
+	cvCvtColor(frame, imgHSV, CV_BGR2HSV_FULL);
+	
+	CvSeq *tmp_cont, *contour;
+	CvSeq *contours1[NUMBER_OF_BLOBS]={0},*contours2[NUMBER_OF_BLOBS]={0},*contours3[NUMBER_OF_BLOBS]={0},*contours4[NUMBER_OF_BLOBS]={0};
+	CvPoint *pt;
+	CvScalar data;
+	
+	unsigned char H,S,V;
+	int a=0,b=0,i,m,l=0; 
+	int total=0, avg,total_S=0, avg_S=0,total_V=0, avg_V=0;
+	int cnt1=0,cnt2=0,cnt3=0,cnt4=0;
+	double maxArea1[NUMBER_OF_BLOBS]={0},maxArea2[NUMBER_OF_BLOBS]={0},maxArea3[NUMBER_OF_BLOBS]={0},maxArea4[NUMBER_OF_BLOBS]={0};
+	double area1=0,tmp_area1=0;
+	int corner_X[4],corner_Y[4],cntcorner1=0,cntcorner2=0,cntcorner3=0,cntcorner4=0,xxxx=0;
+	
+	int LnX_min=0,LnX_max=0,LnY_min=0,LnY_max=0;
+	int flag=0,flag1;
+	
+	unsigned char *data_ts = (unsigned char *)imgThreshed->imageData, *data_hsv = (unsigned char *)imgHSV->imageData;
+	int step_ts = imgThreshed->widthStep/sizeof(unsigned char), step_hsv = imgHSV->widthStep/sizeof(unsigned char);
+	int chanels_hsv = imgHSV->nChannels;
+	
+	unsigned char *data_hsv1 = (unsigned char *)imgRotate_HSV->imageData;
+	int step_hsv1 = imgRotate_HSV->widthStep/sizeof(unsigned char);
+	int chanels_hsv1 = imgRotate_HSV->nChannels;
+	
+	cvZero(imgThreshed);
+	cvZero(imgThreshed1);
+	
+	for(a=UP_ARROW_MARA;a<DOWN_ARROW_MARA;a++)
+	for(b=LEFT_ARROW_MARA;b<RIGHT_ARROW_MARA;b++)
+	{
+		H = data_hsv[a*step_hsv+b*chanels_hsv+0];
+		S = data_hsv[a*step_hsv+b*chanels_hsv+1];
+		V = data_hsv[a*step_hsv+b*chanels_hsv+2];
+
+		if((H >= min1[0] && H <= max1[0] && S >= min1[1] && S<=max1[1] && V>=min1[2] && V<=max1[2])
+		|| (H >= min2[0] && H <= max2[0] && S >= min2[1] && S<=max2[1] && V>=min2[2] && V<=max2[2]) )
+		{
+			data_ts[a*step_ts+b]=255;
+		}
+		else
+		{
+			data_ts[a*step_ts+b]=0;
+		}
+	}
+	
+	cvDilate(imgThreshed,imgThreshed,NULL,1);
+	cvErode(imgThreshed,imgThreshed,NULL,1); 
+	
+	cvAdd(imgThreshed1,imgThreshed,imgThreshed1,0);
+	
+	if(TuneMode)
+		cvShowImage("Arrow",imgThreshed1);
+//	cvMoveWindow("Threshold",500,350);
+	
+	cvFindContours(imgThreshed, storage, &contour, sizeof(CvContour), CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, cvPoint(0,0));
+    
+	for(;contour;contour = contour->h_next)
+	{
+		area1=fabs(cvContourArea(contour,CV_WHOLE_SEQ,1 ));
+		
+		if(area1<MIN_ARROW_SIZE_MARA || area1>MAX_ARROW_SIZE_MARA )
+		{
+			cvSeqRemove(contour,0);
+			continue;
+		}
+	
+			cnt2++;
+			
+			for(i = NUMBER_OF_BLOBS-1; i >= 0; --i)
+			{
+				if(area1 > maxArea2[i])
+				{
+					maxArea2[i] = area1;
+					contours2[i] = contour;
+					
+					for(m = (i-1); m >= 0; --m)
+					{
+						if(maxArea2[m] < maxArea2[m+1])
+						{
+							tmp_area1 = maxArea2[m+1];
+							tmp_cont = contours2[m+1];
+							maxArea2[m+1] = maxArea2[m];
+							contours2[m+1] = contours2[m];
+							maxArea2[m] = tmp_area1;
+							contours2[m] = tmp_cont;
+						}
+					}
+					break;
+				}
+			}
+	}
+	
+	cvZero(imgThreshed);
+	
+	for(a=UP_LINE_MARA;a<DOWN_LINE_MARA;a++)
+	for(b=LEFT_LINE_MARA;b<RIGHT_LINE_MARA;b++)
+	{
+		H = data_hsv[a*step_hsv+b*chanels_hsv+0];
+		S = data_hsv[a*step_hsv+b*chanels_hsv+1];
+		V = data_hsv[a*step_hsv+b*chanels_hsv+2];
+
+		if(Invert[0]==0)
+		{
+			if( (H >= min[0] && H <= max[0] && S >= min[1] && S<=max[1] && V>=min[2] && V<=max[2]))
+			{
+				data_ts[a*step_ts+b]=255;
+			}
+			else
+			{
+				data_ts[a*step_ts+b]=0;
+			}
+		}
+		else
+		{
+			if( ((H <= min[0] || H >= max[0]) && S >= min[1] && S<=max[1] && V>=min[2] && V<=max[2]) )
+			{
+				data_ts[a*step_ts+b]=255;
+			}
+			else
+			{
+				data_ts[a*step_ts+b]=0;
+			}
+		}
+	}
+	
+	if(TuneMode)
+		cvShowImage("Line",imgThreshed);
+		
+	cvFindContours(imgThreshed, storage, &contour, sizeof(CvContour), CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, cvPoint(0,0));
+
+	for(;contour;contour = contour->h_next)
+	{
+		area1=fabs(cvContourArea(contour,CV_WHOLE_SEQ,1 ));
+		
+		if(area1<MIN_LINE_SIZE_MARA || area1>MAX_LINE_SIZE_MARA )
+		{
+			cvSeqRemove(contour,0);
+			continue;
+		}
+		
+		cnt1++;
+		
+		for(i = NUMBER_OF_BLOBS-1; i >= 0; --i)
+		{
+			if(area1 > maxArea1[i])
+			{
+				maxArea1[i] = area1;
+				contours1[i] = contour;
+				
+				for(m = (i-1); m >= 0; --m)
+				{
+					if(maxArea1[m] < maxArea1[m+1])
+					{
+						tmp_area1 = maxArea1[m+1];
+						tmp_cont = contours1[m+1];
+						maxArea1[m+1] = maxArea1[m];
+						contours1[m+1] = contours1[m];
+						maxArea1[m] = tmp_area1;
+						contours1[m] = tmp_cont;
+					}
+				}
+				break;
+			}
+		}	
+	}
+	
+	if(cnt1 != 0)
+	{
+		CvRect rect = ((CvContour*)contours1[0])->rect;
+		if(TuneMode)
+			cvRectangle(frame, cvPoint(rect.x, rect.y), cvPoint(rect.x + rect.width, rect.y + rect.height),CV_RGB(0, 0, 255), 2, 8, 0);
+
+		LnX_min = rect.x / 2;
+		LnX_max = (rect.x + rect.width) / 2;
+		LnY_min = rect.y;
+		LnY_max = rect.y + rect.height;
+	}
+
+	int COUNT_LEFT=0,COUNT_RIGHT=0,Difference_LR;
+	CvSeq* result;
+	int f,rect_center_x,rect_center_y;
+	double tangent,degree;
+	int rect_width,rect_height,rect_temp1,rect_temp2,rect_rotate_x,rect_rotate_y;
+	float WD2HG;
+	int rect_max_x,rect_max_y;
+	
+//	if(cnt2==0 && cnt1!=0)//if only see line,reset to 0
+//	{	
+//		countL=0;
+//		countR=0;
+//		countS=0;
+//	}
+	
+	if(COUNT_RESET==0 && cnt1!=0)//if only see line,reset to 0
+	{
+		countL=0;
+		countR=0;
+		countS=0;
+	}
+	
+	COUNT_RESET=0;	
+	if(cnt2 != 0)// && cnt1 !=0 see line and arrow at the same time
+	{
+		result = cvApproxPoly(contours2[0],sizeof(CvContour),storage,CV_POLY_APPROX_DP,cvContourPerimeter(contours2[0])*0.085,0);
+//		printf("%d\n",result->total);//cvContourPerimeter(contours2[0])*0.02
+		if(result->total == 4)
+		{
+			CvPoint *pt1[4],pt2[2];
+			for(f=0;f<4;f++)
+			{
+				pt1[f]=(CvPoint*)cvGetSeqElem(result,f);
+			}
+			
+			if(TuneMode)
+			{
+				cvLine(frame,*pt1[0],*pt1[1],CV_RGB(0,255,0),2,8,0);
+				cvLine(frame,*pt1[1],*pt1[2],CV_RGB(0,255,0),2,8,0);
+				cvLine(frame,*pt1[2],*pt1[3],CV_RGB(0,255,0),2,8,0);
+				cvLine(frame,*pt1[3],*pt1[0],CV_RGB(0,255,0),2,8,0);
+			}
+			
+
+			rect_center_x = (pt1[0]->x + pt1[2]->x)/2;
+			rect_center_y = (pt1[0]->y + pt1[2]->y)/2;
+			
+			rect_temp1=sqrt((pt1[0]->y-pt1[1]->y)*(pt1[0]->y-pt1[1]->y)+(pt1[0]->x-pt1[1]->x)*(pt1[0]->x-pt1[1]->x));
+			rect_temp2=sqrt((pt1[1]->y-pt1[2]->y)*(pt1[1]->y-pt1[2]->y)+(pt1[1]->x-pt1[2]->x)*(pt1[1]->x-pt1[2]->x));
+			
+			if(rect_temp1>=rect_temp2)
+			{
+				rect_width = rect_temp1;
+				rect_height = rect_temp2;
+			}
+			else
+			{
+				rect_width = rect_temp2;
+				rect_height = rect_temp1;	
+			}
+			
+//			printf("Rect width = %d, Rect height = %d\n",rect_width,rect_height);
+			
+			rect_rotate_x = rect_center_x - rect_width/2;
+			rect_rotate_y = rect_center_y - rect_height/2;
+			WD2HG = rect_width / rect_height;
+			rect_max_x = rect_rotate_x + rect_width;
+			rect_max_y = rect_rotate_y + rect_height;
+			
+//			printf("new x,y is (%d, %d)\n",rect_rotate_x,rect_rotate_y);
+				
+			if(WD2HG>0.4 && WD2HG<1.8 && rect_rotate_x>ARROW_MIN_X && rect_rotate_y>ARROW_MIN_Y && rect_max_x<ARROW_MAX_X && rect_max_y<ARROW_MAX_Y)
+			{
+				if(pt1[0]->y >= pt1[1]->y && pt1[0]->y >= pt1[2]->y && pt1[0]->y >= pt1[3]->y)
+				{
+					pt2[0].x=pt1[0]->x;
+					pt2[0].y=pt1[0]->y;
+					if(pt1[1]->y >= pt1[3]->y)
+					{
+						pt2[1].x=pt1[1]->x;
+						pt2[1].y=pt1[1]->y;
+					}
+					else
+					{
+						pt2[1].x=pt1[3]->x;
+						pt2[1].y=pt1[3]->y;
+					}		
+				}
+				
+				if(pt1[1]->y >= pt1[0]->y && pt1[1]->y >= pt1[2]->y && pt1[1]->y >= pt1[3]->y)
+				{
+					pt2[0].x=pt1[1]->x;
+					pt2[0].y=pt1[1]->y;
+					if(pt1[0]->y >= pt1[2]->y)
+					{
+						pt2[1].x=pt1[0]->x;
+						pt2[1].y=pt1[0]->y;
+					}
+					else
+					{
+						pt2[1].x=pt1[2]->x;
+						pt2[1].y=pt1[2]->y;
+					}
+					
+				}
+				
+				if(pt1[2]->y >= pt1[0]->y && pt1[2]->y >= pt1[1]->y && pt1[2]->y >= pt1[3]->y)
+				{
+					pt2[0].x=pt1[2]->x;
+					pt2[0].y=pt1[2]->y;
+					if(pt1[1]->y >= pt1[3]->y)
+					{
+						pt2[1].x=pt1[1]->x;
+						pt2[1].y=pt1[1]->y;
+					}
+					else
+					{
+						pt2[1].x=pt1[3]->x;
+						pt2[1].y=pt1[3]->y;
+					}
+				}
+				
+				if(pt1[3]->y >= pt1[0]->y && pt1[3]->y >= pt1[1]->y && pt1[3]->y >= pt1[2]->y)
+				{
+					pt2[0].x=pt1[3]->x;
+					pt2[0].y=pt1[3]->y;
+					if(pt1[0]->y >= pt1[2]->y)
+					{
+						pt2[1].x=pt1[0]->x;
+						pt2[1].y=pt1[0]->y;
+					}
+					else
+					{
+						pt2[1].x=pt1[2]->x;
+						pt2[1].y=pt1[2]->y;
+					}
+				}
+				
+				tangent= ((pt2[0].y-pt2[1].y)*0.01)/((pt2[0].x-pt2[1].x)*0.01);
+//				printf("Tangent is %f\n", tangent);	
+//				cvCircle(frame,pt2[0],7,CV_RGB(0,0,255),2,8,0);
+//				cvCircle(frame,pt2[1],7,CV_RGB(0,255,0),2,8,0);
+				degree=tangent*180/3.1415926;
+//				printf("degree is %0.2f\n",degree);
+				
+				imgRotate = RotateImage(frame,imgRotate, degree,rect_center_x,rect_center_y);		
+				
+				cvLine(imgRotate,cvPoint(rect_rotate_x+rect_width*ARROW_LEFT_MIN_RATIO, rect_rotate_y+rect_height*ARROW_UP_RATIO),cvPoint(rect_rotate_x+rect_width*ARROW_LEFT_MIN_RATIO, rect_rotate_y+rect_height*ARROW_DOWN_RATIO),CV_RGB(0,255,0),2,8,0);
+				cvLine(imgRotate,cvPoint(rect_rotate_x+rect_width*ARROW_LEFT_MAX_RATIO, rect_rotate_y+rect_height*ARROW_UP_RATIO),cvPoint(rect_rotate_x+rect_width*ARROW_LEFT_MAX_RATIO, rect_rotate_y+rect_height*ARROW_DOWN_RATIO),CV_RGB(0,255,0),2,8,0);
+				cvLine(imgRotate,cvPoint(rect_rotate_x+rect_width*ARROW_RIGHT_MIN_RATIO, rect_rotate_y+rect_height*ARROW_UP_RATIO),cvPoint(rect_rotate_x+rect_width*ARROW_RIGHT_MIN_RATIO, rect_rotate_y+rect_height*ARROW_DOWN_RATIO),CV_RGB(0,255,0),2,8,0);
+				cvLine(imgRotate,cvPoint(rect_rotate_x+rect_width*ARROW_RIGHT_MAX_RATIO, rect_rotate_y+rect_height*ARROW_UP_RATIO),cvPoint(rect_rotate_x+rect_width*ARROW_RIGHT_MAX_RATIO, rect_rotate_y+rect_height*ARROW_DOWN_RATIO),CV_RGB(0,255,0),2,8,0);
+				
+				cvCvtColor(imgRotate, imgRotate_HSV, CV_BGR2HSV_FULL);
+				
+				for(a=rect_rotate_y+rect_height*ARROW_UP_RATIO;a<rect_rotate_y+rect_height*ARROW_DOWN_RATIO;a++)
+				for(b=rect_rotate_x+rect_width*ARROW_LEFT_MIN_RATIO;b<rect_rotate_x+rect_width*ARROW_LEFT_MAX_RATIO;b++)
+				{
+					H = data_hsv1[a*step_hsv1+b*chanels_hsv1+0];
+					S = data_hsv1[a*step_hsv1+b*chanels_hsv1+1];
+					V = data_hsv1[a*step_hsv1+b*chanels_hsv1+2];
+
+					if( (H >= min2[0] && H <= max2[0] && S >= min2[1] && S<=max2[1] && V>=min2[2] && V<=max2[2]))
+					{
+						COUNT_LEFT = COUNT_LEFT + 1;
+					}
+				}
+				
+				for(a=rect_rotate_y+rect_height*ARROW_UP_RATIO;a<rect_rotate_y+rect_height*ARROW_DOWN_RATIO;a++)
+				for(b=rect_rotate_x+rect_width*ARROW_RIGHT_MIN_RATIO;b<rect_rotate_x+rect_width*ARROW_RIGHT_MAX_RATIO;b++)
+				{
+					H = data_hsv1[a*step_hsv1+b*chanels_hsv1+0];
+					S = data_hsv1[a*step_hsv1+b*chanels_hsv1+1];
+					V = data_hsv1[a*step_hsv1+b*chanels_hsv1+2];
+
+					if( (H >= min2[0] && H <= max2[0] && S >= min2[1] && S<=max2[1] && V>=min2[2] && V<=max2[2]))
+					{
+						COUNT_RIGHT = COUNT_RIGHT + 1;
+					}
+				}
+				
+				Difference_LR= COUNT_LEFT - COUNT_RIGHT;
+				if(Difference_LR < 0)
+					Difference_LR = (-1)*Difference_LR;
+					
+				if(COUNT_LEFT > COUNT_RIGHT && Difference_LR > DIFFERENCE_LR_MAX)
+				{
+	//				printf("Turn Left\n");
+					countL=countL+1;
+				}
+				else
+				if(COUNT_RIGHT > COUNT_LEFT && Difference_LR > DIFFERENCE_LR_MAX)
+				{
+	//				printf("Turn Right\n");
+					countR=countR+1;
+				}
+				else
+				if(Difference_LR < DIFFERENCE_LR_MIN)
+				{
+	//				printf("Go Straight\n");
+					countS=countS+1;
+				}
+				
+				COUNT_RESET=1;
+			}
+			
+			if(countL>countR && countL>countS)
+			{
+				cvCircle(frame,cvPoint(40,120),7,CV_RGB(255,0,0),3,8,0);
+//				printf("Turn Left\n");
+				flag = 1;
+				flag1 = 1;
+				ArX_min = 40;
+				ArX_max = 40;
+				ArY_min = 110;
+				ArY_max = 130;
+			}
+			
+			if(countR>countL && countR>countS)
+			{   
+				cvCircle(frame,cvPoint(280,120),7,CV_RGB(255,0,0),3,8,0);
+//				printf("Turn Right\n");
+				flag = 1;
+				flag1 = 1;
+				ArX_min = 120;
+				ArX_max = 120;
+				ArY_min = 110;
+				ArY_max = 130;		
+			}
+			
+			if(countS>countL && countS>countR)
+			{	
+				cvCircle(frame,cvPoint(160,20),7,CV_RGB(255,0,0),3,8,0);
+//				printf("Go Straight\n");
+				flag = 1;
+				flag1 = 1;
+				ArX_min = 80;
+				ArX_max = 80;
+				ArY_min = 110;
+				ArY_max = 130;		
+			}
+		}	
+	}
+	
+	if(TuneMode)
+		cvShowImage("Rotate",imgRotate);	
+	
+	if(cnt1 != 0)//have Line
+	{
+		if(flag==0)// no arrow
+		{
+			blob->Xmin = LnX_min;
+			blob->Xmax = LnX_max;
+			blob->Ymin = LnY_min;
+			blob->Ymax = LnY_max;
+			ArX_min=255;
+			ArX_max=255;
+			ArY_min=255;
+			ArY_max=255;	
+		}
+		else  //have arrow
+		{
+			if(LnY_min < 180) //upper point smaller than 200, send Line
+			{
+				blob->Xmin = LnX_min;
+				blob->Xmax = LnX_max;
+				blob->Ymin = LnY_min;
+				blob->Ymax = LnY_max;	
+			}
+			else// upper point greater than 200, send Arrow
+			{
+				blob->Xmin = ArX_min;
+				blob->Xmax = ArX_max;
+				blob->Ymin = ArY_min;
+				blob->Ymax = ArY_max;	
+			}
+		}
+	}
+	else  //no line
+	{
+		if(flag == 0)//No arrow
+		{
+				blob->Xmin = ArX_min;
+				blob->Xmax = ArX_max;
+				blob->Ymin = ArY_min;
+				blob->Ymax = ArY_max;				
+		}
+		else  //have arrow
+		{
+			blob->Xmin = ArX_min;
+			blob->Xmax = ArX_max;
+			blob->Ymin = ArY_min;
+			blob->Ymax = ArY_max;	
+		}		
+	}
+	
+	printf("Left:%d, Right:%d,Straight:%d\n",countL,countR,countS);
+	flag = 0;
+	
+	if(TuneMode)
+		VISION_ShowOriginalFrame();
+	
+	cvReleaseImage(&imgHSV);
+	cvReleaseImage(&imgRotate);
+	cvReleaseImage(&imgRotate_HSV);
+	cvReleaseImage(&imgThreshed);
+	cvReleaseImage(&imgThreshed1);
+
+	return(1);
+}
+*/
+//Draw Rectangular and compare left right, no rotation
+/*
 int VISION_Game_ArrowDetect(VisionRange range, VisionRange range1, VisionRange range2, BlobCoord *blob,char *gameplay, Color color)
 {
 	LoadValueColor(range,range1,range2);
@@ -1321,7 +2349,7 @@ int VISION_Game_ArrowDetect(VisionRange range, VisionRange range1, VisionRange r
 	{
 		CvRect rect = ((CvContour*)contours1[0])->rect;
 		if(TuneMode)
-			cvRectangle(frame, cvPoint(rect.x, rect.y), cvPoint(rect.x + rect.width, rect.y + rect.height),CV_RGB(0, 0, 255), 2, 8, 0);
+			cvRectangle(frame, cvPoint(rect.x, rect.y), cvPoint(rect.x + rect.width, rect.y + rect.height),CV_RGB(0, 255, 20), 2, 8, 0);
 
 		LnX_min = rect.x / 2;
 		LnX_max = (rect.x + rect.width) / 2;
@@ -1350,19 +2378,19 @@ int VISION_Game_ArrowDetect(VisionRange range, VisionRange range1, VisionRange r
 		rect_area = rect.width*rect.height;
 		area_ratio = rect_area / maxArea2[0];
 		
-		if(TuneMode && WD2HG>0.7 && WD2HG<1.3 && rect.x>5 && rect.y>100 && rect_max_x<310 && rect_max_y<220 && area_ratio<1.6 && area_ratio>0.8)
+		if(TuneMode && WD2HG>0.7 && WD2HG<1.3 && rect.x>ARROW_MIN_X && rect.y>ARROW_MIN_Y && rect_max_x<ARROW_MAX_X && rect_max_y<ARROW_MAX_Y && area_ratio<1.4 && area_ratio>0.8)
 		{
 			cvRectangle(frame, cvPoint(rect.x, rect.y), cvPoint(rect.x + rect.width, rect.y + rect.height),CV_RGB(0, 0, 255), 2, 8, 0);	
-			cvLine(frame,cvPoint(rect.x+rect.width*0.1, rect.y+rect.height*0.3),cvPoint(rect.x+rect.width*0.1, rect.y+rect.height*0.7),CV_RGB(0,255,0),2,8,0);
-			cvLine(frame,cvPoint(rect.x+rect.width*0.3, rect.y+rect.height*0.3),cvPoint(rect.x+rect.width*0.3, rect.y+rect.height*0.7),CV_RGB(0,255,0),2,8,0);
-			cvLine(frame,cvPoint(rect.x+rect.width*0.7, rect.y+rect.height*0.3),cvPoint(rect.x+rect.width*0.7, rect.y+rect.height*0.7),CV_RGB(0,255,0),2,8,0);
-			cvLine(frame,cvPoint(rect.x+rect.width*0.9, rect.y+rect.height*0.3),cvPoint(rect.x+rect.width*0.9, rect.y+rect.height*0.7),CV_RGB(0,255,0),2,8,0);
+			cvLine(frame,cvPoint(rect.x+rect.width*ARROW_LEFT_MIN_RATIO, rect.y+rect.height*ARROW_UP_RATIO),cvPoint(rect.x+rect.width*ARROW_LEFT_MIN_RATIO, rect.y+rect.height*ARROW_DOWN_RATIO),CV_RGB(0,255,0),2,8,0);
+			cvLine(frame,cvPoint(rect.x+rect.width*ARROW_LEFT_MAX_RATIO, rect.y+rect.height*ARROW_UP_RATIO),cvPoint(rect.x+rect.width*ARROW_LEFT_MAX_RATIO, rect.y+rect.height*ARROW_DOWN_RATIO),CV_RGB(0,255,0),2,8,0);
+			cvLine(frame,cvPoint(rect.x+rect.width*ARROW_RIGHT_MIN_RATIO, rect.y+rect.height*ARROW_UP_RATIO),cvPoint(rect.x+rect.width*ARROW_RIGHT_MIN_RATIO, rect.y+rect.height*ARROW_DOWN_RATIO),CV_RGB(0,255,0),2,8,0);
+			cvLine(frame,cvPoint(rect.x+rect.width*ARROW_RIGHT_MAX_RATIO, rect.y+rect.height*ARROW_UP_RATIO),cvPoint(rect.x+rect.width*ARROW_RIGHT_MAX_RATIO, rect.y+rect.height*ARROW_DOWN_RATIO),CV_RGB(0,255,0),2,8,0);
 		}
 		
-		if(WD2HG>0.7 && WD2HG<1.3 && rect.x>5 && rect.y>100 && rect_max_x<310 && rect_max_y<220 && area_ratio<1.6 && area_ratio>0.8)
+		if(WD2HG>0.7 && WD2HG<1.3 && rect.x>ARROW_MIN_X && rect.y>ARROW_MIN_Y && rect_max_x<ARROW_MAX_X && rect_max_y<ARROW_MAX_Y && area_ratio<1.4 && area_ratio>0.8)
 		{
-			for(a=rect.y+rect.height*0.3;a<rect.y+rect.height*0.7;a++)
-			for(b=rect.x+rect.width*0.1;b<rect.x+rect.width*0.3;b++)
+			for(a=rect.y+rect.height*ARROW_UP_RATIO;a<rect.y+rect.height*ARROW_DOWN_RATIO;a++)
+			for(b=rect.x+rect.width*ARROW_LEFT_MIN_RATIO;b<rect.x+rect.width*ARROW_LEFT_MAX_RATIO;b++)
 			{
 				H = data_hsv[a*step_hsv+b*chanels_hsv+0];
 				S = data_hsv[a*step_hsv+b*chanels_hsv+1];
@@ -1374,8 +2402,8 @@ int VISION_Game_ArrowDetect(VisionRange range, VisionRange range1, VisionRange r
 				}
 			}
 			
-			for(a=rect.y+rect.height*0.3;a<rect.y+rect.height*0.7;a++)
-			for(b=rect.x+rect.width*0.7;b<rect.x+rect.width*0.9;b++)
+			for(a=rect.y+rect.height*ARROW_UP_RATIO;a<rect.y+rect.height*ARROW_DOWN_RATIO;a++)
+			for(b=rect.x+rect.width*ARROW_RIGHT_MIN_RATIO;b<rect.x+rect.width*ARROW_RIGHT_MAX_RATIO;b++)
 			{
 				H = data_hsv[a*step_hsv+b*chanels_hsv+0];
 				S = data_hsv[a*step_hsv+b*chanels_hsv+1];
@@ -1391,19 +2419,19 @@ int VISION_Game_ArrowDetect(VisionRange range, VisionRange range1, VisionRange r
 			if(Difference_LR < 0)
 				Difference_LR = (-1)*Difference_LR;
 				
-			if(COUNT_LEFT > COUNT_RIGHT && Difference_LR > 20)
+			if(COUNT_LEFT > COUNT_RIGHT && Difference_LR > DIFFERENCE_LR_MAX)
 			{
 //				printf("Turn Left\n");
 				countL=countL+1;
 			}
 			else
-			if(COUNT_RIGHT > COUNT_LEFT && Difference_LR > 20)
+			if(COUNT_RIGHT > COUNT_LEFT && Difference_LR > DIFFERENCE_LR_MAX)
 			{
 //				printf("Turn Right\n");
 				countR=countR+1;
 			}
 			else
-			if(Difference_LR < 10)
+			if(Difference_LR < DIFFERENCE_LR_MIN)
 			{
 //				printf("Go Straight\n");
 				countS=countS+1;
@@ -1462,7 +2490,7 @@ int VISION_Game_ArrowDetect(VisionRange range, VisionRange range1, VisionRange r
 		}
 		else  //have arrow
 		{
-			if(LnY_min < 180) //upper point smaller than 200, send Line
+			if(LnY_min < LINE_MINY_SEND) //upper point smaller than 200, send Line
 			{
 				blob->Xmin = LnX_min;
 				blob->Xmax = LnX_max;
@@ -1510,9 +2538,10 @@ int VISION_Game_ArrowDetect(VisionRange range, VisionRange range1, VisionRange r
 
 	return(1);
 }
-
+*/
+//Original method,find poly and scan all center
 /*
-int VISION_Game_ArrowDetect(VisionRange range, VisionRange range1, VisionRange range2, BlobCoord *blob,char *gameplay, Color color) // old method
+int VISION_Game_ArrowDetect(VisionRange range, VisionRange range1, VisionRange range2, BlobCoord *blob,char *gameplay, Color color)
 {
 	LoadValueColor(range,range1,range2);
 //	printf("Game Arrow\n");

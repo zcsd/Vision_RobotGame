@@ -8,9 +8,9 @@
 #define FRAME_HEIGHT 240
 
 /////////////CUT WINDOW////////////////
-#define LEFT_FLOOR_OBS 0  //FIRA OBS FLOOR
-#define RIGHT_FLOOR_OBS 320
-#define UP_FLOOR_OBS 0
+#define LEFT_FLOOR_OBS 40  //FIRA OBS FLOOR
+#define RIGHT_FLOOR_OBS 280
+#define UP_FLOOR_OBS 60
 #define DOWN_FLOOR_OBS 240
 
 #define LEFT_FOLDER_OBS 0 //FIRA OBS FOLDER
@@ -28,7 +28,7 @@
 #define UP_LINE_MARA 0
 #define DOWN_LINE_MARA 240
 
-#define LEFT_BALL_BSK 100  //FIRA BSK BALL
+#define LEFT_BALL_BSK 0  //FIRA BSK BALL
 #define RIGHT_BALL_BSK 320
 #define UP_BALL_BSK 0
 #define DOWN_BALL_BSK 240
@@ -40,13 +40,13 @@
 ///////////////////////////////////////
 
 //////////////BLOB SIZE////////////////
-#define MIN_LINE_SIZE_MARA 100
+#define MIN_LINE_SIZE_MARA 0
 #define MAX_LINE_SIZE_MARA 50000
 #define MIN_ARROW_SIZE_MARA 100
 #define MAX_ARROW_SIZE_MARA 20000
 
 #define MIN_FLOOR_SIZE_OBS 100
-#define MAX_FLOOR_SIZE_OBS 50000
+#define MAX_FLOOR_SIZE_OBS 70000
 #define MIN_REDFOLDER_SIZE_OBS 100
 #define MAX_REDFOLDER_SIZE_OBS 50000
 
@@ -75,6 +75,15 @@
 #define LINE_MINY_SEND 180 // if Line upper point smaller than 180, send line; greater than 180, send arrow
 //////////////////////////////////////
 
+////////////FIRA OBS/////////////////
+#define HUE_MIN3 255
+#define HUE_MAX3 255
+#define SAT_MIN3 255
+#define SAT_MAX3 255
+#define LUM_MIN3 255
+#define LUM_MAX3 255
+/////////////////////////////////////
+
 unsigned char min[3]= {0};
 unsigned char max[3]= {0};
 unsigned char min1[3]= {0};
@@ -85,7 +94,7 @@ unsigned int Invert[3]={0};
 
 unsigned int ArX_min=0,ArX_max=0,ArY_min=0,ArY_max=0;
 
-int colorNo,countS,countL,countR,COUNT_RESET;
+int colorNo,countS,countL,countR,COUNT_RESET,COUNT_LINE=0;
 char TuneMode=0;
 
 char str[50]; 
@@ -571,7 +580,9 @@ int VISION_Game_1Color(VisionRange range, VisionRange range1, VisionRange range2
 		
 		if(Invert[0]==0)
 		{
-			if( (H >= min[0] && H <= max[0] && S >= min[1] && S<=max[1] && V>=min[2] && V<=max[2])  )
+			if( (H >= min[0] && H <= max[0] && S >= min[1] && S<=max[1] && V>=min[2] && V<=max[2])
+			|| (H >= min1[0] && H <= max1[0] && S >= min1[1] && S<=max1[1] && V>=min1[2] && V<=max1[2])
+			|| (H >= min2[0] && H <= max2[0] && S >= min2[1] && S<=max2[1] && V>=min2[2] && V<=max2[2])   )
 			{
 				data_ts[a*step_ts+b]=255;
 			}
@@ -582,7 +593,9 @@ int VISION_Game_1Color(VisionRange range, VisionRange range1, VisionRange range2
 		}
 		else
 		{
-			if( (H <= min[0] || H >= max[0]) && S >= min[1] && S<=max[1] && V>=min[2] && V<=max[2])
+			if( ((H <= min[0] || H >= max[0]) && S >= min[1] && S<=max[1] && V>=min[2] && V<=max[2])
+			||((H >= min1[0] && H <= max1[0]) && S >= min1[1] && S<=max1[1] && V>=min1[2] && V<=max1[2])
+			||((H <= min2[0] || H >= max2[0]) && S >= min2[1] && S<=max2[1] && V>=min2[2] && V<=max2[2]))
 			{
 				data_ts[a*step_ts+b]=255;	
 			}
@@ -640,26 +653,75 @@ int VISION_Game_1Color(VisionRange range, VisionRange range1, VisionRange range2
 	
 	}
 	
+	unsigned int rect_x, rect_y,rect_max_x,rect_max_y,rect_width;
+	
 	if(cnt1 != 0)
+	{
+		CvRect rect = ((CvContour*)contours1[0])->rect;
+		rect_x = rect.x;
+		rect_y = rect.y;
+		rect_max_x = rect.x + rect.width;
+		rect_max_y = rect.y + rect.height;
+		rect_width = rect.width;
+		printf("%d %d %d %d %d\n",rect_x,rect_y,rect_max_x,rect_max_y,rect_width);
+		printf("width is %d\n",rect.width);
+		
+		if(TuneMode)
+			cvRectangle(frame, cvPoint(rect.x, rect.y), cvPoint(rect.x + rect.width, rect.y + rect.height),CV_RGB(0, 0, 255), 2, 8, 0);
+		
+		if(rect.y > 120 && rect.width <60) //Upper X smaller than 10
 		{
-			CvRect rect = ((CvContour*)contours1[0])->rect;
-			
-			if(TuneMode)
-				cvRectangle(frame, cvPoint(rect.x, rect.y), cvPoint(rect.x + rect.width, rect.y + rect.height),CV_RGB(0, 0, 255), 2, 8, 0);
-
+			COUNT_LINE = COUNT_LINE + 1;
+			printf("COUNT is %d\n",COUNT_LINE);
+			cvCircle(frame,cvPoint(160,60),7,CV_RGB(0,0,255),3,8,0);
+		}
+		else
+		{
+			COUNT_LINE = 0;
+		}
+		
+/*		if(COUNT_LINE > 30 && rect.width <60)
+		{
+			blob->Xmin = 251;
+			blob->Xmax = 251;
+			blob->Ymin = 251;
+			blob->Ymax = 251;
+			cvCircle(frame,cvPoint(160,120),7,CV_RGB(255,0,0),3,8,0);
+		}
+		else	
+		{	
 			blob->Xmin = rect.x / 2;
 			blob->Xmax = (rect.x + rect.width) / 2;
 			blob->Ymin = rect.y;
 			blob->Ymax = rect.y + rect.height;
-		}
-		else
-		{
-			blob->Xmin = 255;
-			blob->Xmax = 255;
-			blob->Ymin = 255;
-			blob->Ymax = 255;
-		}
-		
+		}*/	
+	}
+	else
+	{
+		blob->Xmin = 251;
+		blob->Xmax = 251;
+		blob->Ymin = 251;
+		blob->Ymax = 251;
+		cvCircle(frame,cvPoint(160,120),7,CV_RGB(255,0,0),3,8,0);
+	}
+	
+	if(cnt1!=0 && COUNT_LINE<15)
+	{
+		blob->Xmin = rect_x / 2;
+		blob->Xmax = rect_max_x / 2;
+		blob->Ymin = rect_y;
+		blob->Ymax = rect_max_y;
+	}
+	
+	if(cnt1!=0 && COUNT_LINE>=15)
+	{
+		blob->Xmin = 251;
+		blob->Xmax = 251;
+		blob->Ymin = 251;
+		blob->Ymax = 251;
+		cvCircle(frame,cvPoint(160,120),7,CV_RGB(255,0,0),3,8,0);
+	}
+			
 	if(TuneMode)	
 		VISION_ShowOriginalFrame();
 	
@@ -704,7 +766,9 @@ int VISION_Game_OBS(VisionRange range, VisionRange range1, VisionRange range2, B
 		S = data_hsv[a*step_hsv+b*chanels_hsv+1];
 		V = data_hsv[a*step_hsv+b*chanels_hsv+2];
 		
-			if( (H >= min[0] && H <= max[0] && S >= min[1] && S<=max[1] && V>=min[2] && V<=max[2])  )
+			if( (H >= min1[0] && H <= max1[0] && S >= min1[1] && S<=max1[1] && V>=min1[2] && V<=max1[2])
+			  ||(H >= min2[0] && H <= max2[0] && S >= min2[1] && S<=max2[1] && V>=min2[2] && V<=max2[2])
+			  ||(H >= HUE_MIN3 && H <= HUE_MAX3 && S >= SAT_MIN3 && S<=SAT_MAX3 && V>=LUM_MIN3 && V<=LUM_MAX3))
 			{
 				data_ts[a*step_ts+b]=0;//Floor,black
 			}
@@ -785,9 +849,9 @@ int VISION_Game_OBS(VisionRange range, VisionRange range1, VisionRange range2, B
 		S = data_hsv[a*step_hsv+b*chanels_hsv+1];
 		V = data_hsv[a*step_hsv+b*chanels_hsv+2];
 
-		if(Invert[1]==0)
+		if(Invert[0]==0)
 		{
-			if( (H >= min1[0] && H <= max1[0] && S >= min1[1] && S<=max1[1] && V>=min1[2] && V<=max1[2]))
+			if( (H >= min[0] && H <= max[0] && S >= min[1] && S<=max[1] && V>=min[2] && V<=max[2]))
 			{
 				data_ts[a*step_ts+b]=255;
 
@@ -799,7 +863,7 @@ int VISION_Game_OBS(VisionRange range, VisionRange range1, VisionRange range2, B
 		}
 		else
 		{
-			if( ((H <= min1[0] || H >= max1[0]) && S >= min1[1] && S<=max1[1] && V>=min1[2] && V<=max1[2]) )
+			if( ((H <= min[0] || H >= max[0]) && S >= min[1] && S<=max[1] && V>=min[2] && V<=max[2]) )
 			{
 				data_ts[a*step_ts+b]=255;
 				
